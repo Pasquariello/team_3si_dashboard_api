@@ -57,6 +57,13 @@ typings/
 # dotenv environment variables file
 .env
 
+# HTTPS Certs
+/cert/
+/*.key
+/*.cert
+/*.pem
+
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 

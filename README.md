@@ -36,20 +36,45 @@ Edit .env as needed:
 PORT=3000
 ```
 
-### 3. Run in Development
+### 3. Setup Https certs for local dev
+
+Setup mkcert:
+```bash
+brew install mkcert
+brew install nss  # if you use Firefox
+```
+
+then run and restart browser:
+```bash
+mkcert -install
+```
+
+Finally running this will create the cert directory with the needed .pem's:
+
+```bash
+pnpm mkcert
+```
+
+### 4. Run in Development
 
 ```bash
 pnpm dev
 ```
+
 Your API will be running at:
-```bash
-http://localhost:3000/api/v1
-```
+
+| Address Type       | URL                    |
+|--------------------|------------------------|
+| localhost          | https://localhost:3000 |
+| IPv4 (127.0.0.1)   | https://127.0.0.1:3000 |
+| IPv6 (::1)         | https://[::1]:3000     |
+
 ### ⚙️ Available Scripts
 | Script | Purpose                          |
 |--------|----------------------------------|
-| dev    | Run in dev mode with live reload |
 | start  | Run compiled app (production)    |
+| dev    | Run in dev mode with live reload |
+| mkcert | Run to generate HTTPS certs      |
 | build  | Compile TypeScript to JS         |
 | lint   | Run ESLint                       |
 
