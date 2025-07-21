@@ -27,7 +27,7 @@ pnpm install
 Copy and configure your environment:
 
 ```bash
-cp .env.example .env
+cp .env.sample .env
 ```
 
 Edit .env as needed:
@@ -43,7 +43,7 @@ pnpm dev
 ```
 Your API will be running at:
 ```bash
-http://localhost:3000/api/hello
+http://localhost:3000/api/v1
 ```
 ### ⚙️ Available Scripts
 | Script | Purpose                          |
