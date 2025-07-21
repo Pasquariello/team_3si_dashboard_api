@@ -5,7 +5,11 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().default(3000),
   SSL_KEY_PATH: z.string().nonempty(),
-  SSL_CERT_PATH: z.string().nonempty()
+  SSL_CERT_PATH: z.string().nonempty(),
+  WORKSPACE_URL: z.string().nonempty(),
+  PAT_TOKEN: z.string().nonempty(),
+  WAREHOUSE_ID: z.string().nonempty(),
+
 });
 
 try {

@@ -10,7 +10,7 @@ A simple and modern **Express + TypeScript** API, generated with [`create-expres
 - 🔄 Live reload with `ts-node-dev`
 - 🌱 Environment variable support via `.env`
 - 📦 Minimal and clean project structure
-- 🧪 Basic `/api/hello` route for testing
+- 🧪 Basic `/api/v1` route for testing
 - 🤝 CORS enabled for frontend integration
 
 ---
