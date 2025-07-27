@@ -13,7 +13,6 @@
   "scripts": {
     "start": "node --env-file=.env dist/src/index.js",
     "dev": "tsx watch --env-file=.env src/index.ts",
-    "mkcert": "sh -c '[ -d cert ] || mkdir cert && mkcert -key-file cert/key.pem -cert-file cert/cert.pem localhost 127.0.0.1 ::1'",
     "build": "tsc",
     "lint": "eslint --fix src test",
     "test": "vitest run",
