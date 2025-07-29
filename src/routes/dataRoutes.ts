@@ -17,6 +17,16 @@
 import { Router, Request, Response } from 'express';
 import { queryData } from '../services/queryService';
 
+export type MonthlyProviderData = {
+  provider_licensing_id: string;
+  provider_name: string;
+  StartOfMonth: string; //ISO DateString
+  billed_over_capacity_flag: boolean;
+  placed_over_capacity_flag: boolean;
+  same_address_flag: boolean;
+  distance_traveled_flag: boolean;
+};
+
 const router = Router();
 
 router.get<object, any>("/", async (req, res) => {
@@ -27,10 +37,10 @@ router.get<object, any>("/", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-router.get('/monthly', async (req: Request, res: Response) => {
-  // get from req the values for the month
-
+// /month:yyyy-MM-dd
+router.get('/month/:month', async (req: Request, res: Response) => {
+  // TODO: verify this here
+  const month = req.params.month + '-01'
   const monthly = `SELECT rp.provider_licensing_id,
 rp.provider_name,
 dates.StartOfMonth,
@@ -39,13 +49,13 @@ poc.placed_over_capacity_flag,
 sa.same_address_flag,
 dt.distance_traveled_flag
 FROM (
-    SELECT provider_licensing_id, StartOfMonth from cusp_audit.demo.monthly_billed_over_capacity WHERE StartOfMonth = to_timestamp('2024-01-01', 'yyyy-MM-dd')
+    SELECT provider_licensing_id, StartOfMonth from cusp_audit.demo.monthly_billed_over_capacity WHERE StartOfMonth = to_timestamp('${month}', 'yyyy-MM-dd')
     UNION
-    SELECT provider_licensing_id, StartOfMonth from cusp_audit.demo.monthly_placed_over_capacity WHERE StartOfMonth = to_timestamp('2024-01-01', 'yyyy-MM-dd')
+    SELECT provider_licensing_id, StartOfMonth from cusp_audit.demo.monthly_placed_over_capacity WHERE StartOfMonth = to_timestamp('${month}', 'yyyy-MM-dd')
     UNION
-    SELECT provider_licensing_id, StartOfMonth from cusp_audit.demo.monthly_providers_with_same_address WHERE StartOfMonth = to_timestamp('2024-01-01', 'yyyy-MM-dd')
+    SELECT provider_licensing_id, StartOfMonth from cusp_audit.demo.monthly_providers_with_same_address WHERE StartOfMonth = to_timestamp('${month}', 'yyyy-MM-dd')
     UNION
-    SELECT provider_licensing_id, StartOfMonth from cusp_audit.demo.monthly_distance_traveled WHERE StartOfMonth = to_timestamp('2024-01-01', 'yyyy-MM-dd')
+    SELECT provider_licensing_id, StartOfMonth from cusp_audit.demo.monthly_distance_traveled WHERE StartOfMonth = to_timestamp('${month}', 'yyyy-MM-dd')
 ) AS dates
 JOIN cusp_audit.demo.risk_providers rp ON rp.provider_licensing_id = dates.provider_licensing_id
 LEFT JOIN cusp_audit.demo.monthly_billed_over_capacity boc ON boc.provider_licensing_id = dates.provider_licensing_id AND boc.StartOfMonth = dates.StartOfMonth
@@ -56,8 +66,27 @@ ORDER BY dates.StartOfMonth DESC
 limit 1000`
 
   try {
-    const data = await queryData(monthly);
-    res.json(data);
+    const rawData:MonthlyProviderData[] = await queryData(monthly);
+
+    // add overall risk score
+    const booleanKeys = ['billed_over_capacity_flag', 'placed_over_capacity_flag', 'same_address_flag', 'distance_traveled_flag'] as const;
+    const result = rawData.map(item => {
+      console.log(item)
+      const overallRiskScore = booleanKeys.reduce((sum, key) => sum + (item[key] ? 1 : 0), 0);
+      return { 
+        id: item.provider_licensing_id,
+        startOfMonth: item.StartOfMonth,
+        providerName: item.provider_name,
+        childrenBilledOver: item.billed_over_capacity_flag ? "Yes" : "--",
+        childrenPlacedOverCapacity: item.placed_over_capacity_flag ? "Yes" : "--",
+        distanceTraveled: item.distance_traveled_flag ? "Yes" : "--",
+        providersWithSameAddress: item.same_address_flag ? "Yes" : "--",
+        overallRiskScore
+      };
+    });
+    console.log(month)
+    console.log("Success, ",result)
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
