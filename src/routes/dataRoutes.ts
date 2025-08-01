@@ -41,6 +41,7 @@ router.get<object, any>("/", async (req, res) => {
 router.get('/month/:month', async (req: Request, res: Response) => {
   // TODO: verify this here
   const month = req.params.month + '-01'
+  const offset = req.query.offset || '0';
   const monthly = `SELECT rp.provider_licensing_id,
 rp.provider_name,
 dates.StartOfMonth,
@@ -63,7 +64,7 @@ LEFT JOIN cusp_audit.demo.monthly_placed_over_capacity poc ON poc.provider_licen
 LEFT JOIN cusp_audit.demo.monthly_providers_with_same_address sa ON sa.provider_licensing_id = dates.provider_licensing_id AND sa.StartOfMonth = dates.StartOfMonth
 LEFT JOIN cusp_audit.demo.monthly_distance_traveled dt ON dt.provider_licensing_id = dates.provider_licensing_id AND dt.StartOfMonth = dates.StartOfMonth
 ORDER BY dates.StartOfMonth DESC
-limit 1000`
+limit 200 offset ${offset}`
 
   try {
     const rawData:MonthlyProviderData[] = await queryData(monthly);
@@ -71,21 +72,20 @@ limit 1000`
     // add overall risk score
     const booleanKeys = ['billed_over_capacity_flag', 'placed_over_capacity_flag', 'same_address_flag', 'distance_traveled_flag'] as const;
     const result = rawData.map(item => {
-      console.log(item)
       const overallRiskScore = booleanKeys.reduce((sum, key) => sum + (item[key] ? 1 : 0), 0);
       return { 
         id: item.provider_licensing_id,
         startOfMonth: item.StartOfMonth,
         providerName: item.provider_name,
-        childrenBilledOver: item.billed_over_capacity_flag ? "Yes" : "--",
+        childrenBilledOverCapacity: item.billed_over_capacity_flag ? "Yes" : "--",
         childrenPlacedOverCapacity: item.placed_over_capacity_flag ? "Yes" : "--",
         distanceTraveled: item.distance_traveled_flag ? "Yes" : "--",
         providersWithSameAddress: item.same_address_flag ? "Yes" : "--",
         overallRiskScore
       };
     });
-    console.log(month)
-    console.log("Success, ",result)
+    console.log(month, offset)
+    console.log("Success")
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
