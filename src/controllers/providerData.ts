@@ -2,8 +2,8 @@
 import { Router, Request, Response } from 'express';
 import { queryData } from '../services/queryService';
 
-// @desc    Update new bootcamp
-// @route   put /api/v1/bootcamps/:id
+// @desc    Update provider insight data - update comment or update flag status
+// @route   put /api/v1/providerData/insights/:id
 // @access  Private
 export const updateProviderDataInsights = async (req: Request, res: Response) => {
     const row_id = req.params.row_id;
@@ -46,48 +46,4 @@ export const updateProviderDataInsights = async (req: Request, res: Response) =>
         console.log('err =======', err);
         res.status(500).json({ error: err.message });
     }
-
-//   const response = await fetch(`${DATABRICKS_INSTANCE}/api/2.0/sql/statements`, {
-//     method: 'POST',
-//     headers: {
-//       'Authorization': `Bearer ${TOKEN}`,
-//       'Content-Type': 'application/json',
-//     },
-//     body: JSON.stringify({
-//       statement: sqlQuery,
-//       warehouse_id: SQL_ENDPOINT_ID,
-//     }),
-//   });
-
-//   const data = await response.json();
-
-//   if (!response.ok) {
-//     throw new Error(`Error running upsert: ${data.message || JSON.stringify(data)}`);
-//   }
-
-//   console.log('Upsert query submitted:', data);
-
-    // console.log('HIT UPDATE', row_id);
-    // console.log('body ===', body);
-
-    
-    // res.json({message: 'Hit update', id: row_id, data: body});
-
-    // const bootcamp = await Bootcamp.findByIdAndUpdate(id, body, {
-    //     new: true,
-    //     runValidators: true
-    // });
-
-    // if (!bootcamp) {
-    //     // use return here to make sure that in this 
-    //     // if statement the function stops
-    //     return next(new ErrorResponse(`Bootcamp not found with id of ${id}`, 404));
-
-    // }
-
-    // res.status(200).json({ 
-    //     success: true, 
-    //     data: bootcamp,
-    // });
-
 };
