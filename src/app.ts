@@ -5,6 +5,7 @@ import morgan from "morgan";
 
 import type MessageResponse from "./interfaces/message-response.js";
 import dataRoutes from './routes/dataRoutes.js';
+import providerData from './routes/providerData';
 
 import * as middlewares from "./middlewares.js";
 
@@ -22,6 +23,8 @@ app.get<object, MessageResponse>("/", (req, res) => {
 });
 
 app.use('/api/v1', dataRoutes);
+
+app.use('/api/v1/providerData', providerData);
 
 
 app.use(middlewares.notFound);
