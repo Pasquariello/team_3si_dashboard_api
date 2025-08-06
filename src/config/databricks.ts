@@ -1,5 +1,3 @@
-/* eslint-disable node/no-process-env */
-
 // const { connect } = require('@databricks/sql');
 
 // const connection = connect({
@@ -12,6 +10,8 @@
 
 import { DBSQLClient } from "@databricks/sql";
 
+import { env } from "../env.js";
+
 const client = new DBSQLClient();
 
 export async function connectToDatabricks() {
@@ -21,9 +21,9 @@ export async function connectToDatabricks() {
   //   token: process.env.PAT_TOKEN || "",
   // });
   await client.connect({
-    host: process.env.DATABRICKS_HOST || "",
-    path: process.env.DATABRICKS_HTTP_PATH || "",
-    token: process.env.PAT_TOKEN || "",
+    host: env.DATABRICKS_HOST || "",
+    path: env.DATABRICKS_HTTP_PATH || "",
+    token: env.PAT_TOKEN || "",
   });
 
   return client;
