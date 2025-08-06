@@ -16,7 +16,10 @@
 import type { Request, Response } from "express";
 
 import { Router } from "express";
+import jwt from "jsonwebtoken";
 
+import { env } from "../env.js";
+import { authenticateJWT } from "../middlewares.js";
 import { queryData } from "../services/queryService.js";
 
 export type MonthlyProviderData = {
@@ -40,8 +43,22 @@ router.get<object, any>("/", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+router.post<object, any>("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  // hardcoded user check (replace with DB lookup)
+  if (email !== "team3si" || password !== "reallysecurepassword") {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+
+  const payload = { email, password };
+  const token = jwt.sign(payload, env.JWT_SECRET, { expiresIn: "1h" });
+
+  res.status(200).json({ token });
+});
 // /month:yyyy-MM-dd
-router.get("/month/:month", async (req: Request, res: Response) => {
+router.get("/month/:month", authenticateJWT, async (req: Request, res: Response) => {
   // TODO: verify this here
   const month = `${req.params.month}-01`;
   const offset = req.query.offset || "0";
