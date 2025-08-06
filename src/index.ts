@@ -1,5 +1,4 @@
 /* eslint-disable no-console */
-import fs from "node:fs";
 import http from "node:http";
 
 import app from "./app.js";
@@ -7,7 +6,7 @@ import { env } from "./env.js";
 
 const port = env.PORT || 3000;
 const server = http.createServer(app).listen(port, () => {
-  console.log('Listening (HTTP): ', port);
+  console.log("Listening (HTTP): ", port);
 });
 
 server.on("error", (err) => {

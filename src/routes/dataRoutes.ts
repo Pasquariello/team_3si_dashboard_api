@@ -87,8 +87,8 @@ limit 200 offset ${offset}`;
         overallRiskScore,
       };
     });
-    console.log(month, offset);
-    console.log("Success");
+    // console.log(month, offset);
+    // console.log("Success");
     res.json(result);
   }
   catch (err: any) {

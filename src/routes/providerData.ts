@@ -1,22 +1,23 @@
-import { Router, Request, Response } from 'express';
-import { updateProviderDataInsights } from '../controllers/providerData';
+import type express from "express";
 
-import { queryData } from '../services/queryService';
+import { Router } from "express";
+
+import { updateProviderDataInsights } from "../controllers/providerData.js";
+import { queryData } from "../services/queryService.js";
 
 const router = Router();
 
-router.get('/', async (req: Request, res: Response) => {
+router.get("/", async (req: express.Request, res: express.Response) => {
   try {
-    const data = await queryData('select * from cusp_audit.demo limit 10');
+    const data = await queryData("select * from cusp_audit.demo limit 10");
     res.json(data);
-  } catch (err: any) {
+  }
+  catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-router.route('/insights/:row_id')
-    .put(updateProviderDataInsights)
+router.route("/insights/:row_id")
+  .put(updateProviderDataInsights);
 
-
-export default router
-
+export default router;

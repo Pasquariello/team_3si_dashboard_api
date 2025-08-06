@@ -1,23 +1,23 @@
+import type express from "express";
 
-import { Router, Request, Response } from 'express';
-import { queryData } from '../services/queryService';
+import { queryData } from "../services/queryService.js";
 
 // @desc    Update provider insight data - update comment or update flag status
 // @route   put /api/v1/providerData/insights/:id
 // @access  Private
-export const updateProviderDataInsights = async (req: Request, res: Response) => {
-    const row_id = req.params.row_id;
-    const body = req.body;
-    const { provider_licensing_id, is_flagged, comment} =  req?.body;
+export async function updateProviderDataInsights(req: express.Request, res: express.Response) {
+  const row_id = req.params.row_id;
+  // const body = req.body;
+  const { provider_licensing_id, is_flagged, comment } = req?.body;
 
-//  id INT,
-//     row_id  STRING,
-//     provider_licensing_id INT,
-//     is_flagged BOOLEAN,
-//     comment STRING,
-//     created_at TIMESTAMP
+  //  id INT,
+  //     row_id  STRING,
+  //     provider_licensing_id INT,
+  //     is_flagged BOOLEAN,
+  //     comment STRING,
+  //     created_at TIMESTAMP
 
-    const sqlQuery = `
+  const sqlQuery = `
         MERGE INTO cusp_audit.demo.provider_data_insights target
         USING (
             SELECT
@@ -37,13 +37,14 @@ export const updateProviderDataInsights = async (req: Request, res: Response) =>
         VALUES (source.id, source.provider_licensing_id, source.is_flagged, source.comment)
     `;
 
-//   'select * from cusp_audit.demo limit 10'
-   try { 
-        const data = await queryData(sqlQuery);
-        console.log('DATA', data);
-        res.json(data);
-    } catch (err: any) {
-        console.log('err =======', err);
-        res.status(500).json({ error: err.message });
-    }
-};
+  //   'select * from cusp_audit.demo limit 10'
+  try {
+    const data = await queryData(sqlQuery);
+    // console.log("DATA", data);
+    res.json(data);
+  }
+  catch (err: any) {
+    // console.log("err =======", err);
+    res.status(500).json({ error: err.message });
+  }
+}
