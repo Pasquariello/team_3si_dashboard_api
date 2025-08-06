@@ -23,5 +23,4 @@ catch (error) {
   process.exit(1);
 }
 
- 
 export const env = envSchema.parse(process.env);

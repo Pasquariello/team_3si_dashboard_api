@@ -11,7 +11,7 @@
 //   }
 // }
 
-import { connectToDatabricks } from '../config/databricks';
+import { connectToDatabricks } from "../config/databricks.js";
 
 export async function queryData(sql: string): Promise<any[]> {
   const client = await connectToDatabricks();
@@ -25,4 +25,3 @@ export async function queryData(sql: string): Promise<any[]> {
 
   return result;
 }
-

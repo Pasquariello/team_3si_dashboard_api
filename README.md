@@ -24,6 +24,7 @@ pnpm install
 ```
 
 ### 2. Environment Variables
+
 Copy and configure your environment:
 
 ```bash
@@ -43,14 +44,13 @@ pnpm dev
 ```
 
 ### ⚙️ Available Scripts
+
 | Script | Purpose                          |
-|--------|----------------------------------|
+| ------ | -------------------------------- |
 | start  | Run compiled app (production)    |
 | dev    | Run in dev mode with live reload |
 | build  | Compile TypeScript to JS         |
 | lint   | Run ESLint                       |
-
-
 
 ### Includes API Server utilities:
 
