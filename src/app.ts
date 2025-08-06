@@ -4,8 +4,9 @@ import helmet from "helmet";
 import morgan from "morgan";
 
 import type MessageResponse from "./interfaces/message-response.js";
+import dataRoutes from './routes/dataRoutes.js';
+import providerData from './routes/providerData';
 
-import api from "./api/index.js";
 import * as middlewares from "./middlewares.js";
 
 const app = express();
@@ -21,7 +22,10 @@ app.get<object, MessageResponse>("/", (req, res) => {
   });
 });
 
-app.use("/api/v1", api);
+app.use('/api/v1', dataRoutes);
+
+app.use('/api/v1/providerData', providerData);
+
 
 app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);
