@@ -8,6 +8,7 @@ const envSchema = z.object({
 
   DATABRICKS_HOST: z.string().nonempty(),
   DATABRICKS_HTTP_PATH: z.string().nonempty(),
+  JWT_SECRET: z.string().nonempty(),
 });
 
 try {
