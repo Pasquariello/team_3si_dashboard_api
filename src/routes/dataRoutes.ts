@@ -58,8 +58,11 @@ router.post<object, any>("/login", async (req, res) => {
   res.status(200).json({ token });
 });
 // /month:yyyy-MM-dd
-router.get("/month/:month", authenticateJWT, async (req: Request, res: Response) => {
+router.post("/month/:month", authenticateJWT, async (req: Request, res: Response) => {
   // TODO: verify this here
+  const body = req.body
+  // eslint-disable-next-line no-console
+  console.log(body) 
   const month = `${req.params.month}-01`;
   const offset = req.query.offset || "0";
   const monthly = `SELECT rp.provider_licensing_id,
