@@ -2,7 +2,7 @@ import type express from "express";
 
 import { Router } from "express";
 
-import { updateProviderDataInsights } from "../controllers/providerData.js";
+import { updateProviderDataInsights, getProviderAnnualData } from "../controllers/providerData";
 import { queryData } from "../services/queryService.js";
 
 const router = Router();
@@ -17,7 +17,13 @@ router.get("/", async (req: express.Request, res: express.Response) => {
   }
 });
 
+router.route("/annual/:year")
+  .get(getProviderAnnualData)
+
+  
+
 router.route("/insights/:row_id")
   .put(updateProviderDataInsights);
 
 export default router;
+
