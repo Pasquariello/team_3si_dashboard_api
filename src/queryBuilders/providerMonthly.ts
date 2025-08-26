@@ -60,8 +60,12 @@ export const buildProviderMonthlyQuery = ({ month, offset, isFlagged }: BuildPro
   WHERE 1=1`;
 
 
-  if (isFlagged !== null) {
+  if (isFlagged !== null && isFlagged !== false) {
     query.append(SQL` AND pi.is_flagged = :isFlagged`);
+  }
+  // get records that have not been flagged prior, then upflagged
+  if (isFlagged === false) {
+    query.append(SQL` AND (pi.is_flagged IS NULL OR pi.is_flagged = :isFlagged)`);
   }
 
   // ---- append filter to the query above this line ----
