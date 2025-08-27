@@ -70,7 +70,7 @@ router.post<object, any>("/login", async (req, res) => {
   const { email, password } = req.body;
 
   // hardcoded user check (replace with DB lookup)
-  if (email !== "team3si" || password !== "reallysecurepassword") {
+  if (email !== "team3si" || password !== "Team3siRocks") {
     return res.status(401).json({ error: "Invalid credentials" });
   }
 
