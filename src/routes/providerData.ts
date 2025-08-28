@@ -17,7 +17,6 @@ router.get("/", async (req: express.Request, res: express.Response) => {
   }
 });
 
-router.route("/insights/:row_id")
-  .put(updateProviderDataInsights);
+router.put("/insights/:row_id", updateProviderDataInsights);
 
 export default router;
