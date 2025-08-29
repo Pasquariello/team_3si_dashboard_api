@@ -25,5 +25,6 @@ router.route("/annual/:year")
 router.route("/insights/:row_id")
   .put(updateProviderDataInsights);
 
+
 export default router;
 
