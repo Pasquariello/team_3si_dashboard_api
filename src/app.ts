@@ -22,9 +22,9 @@ app.get<object, MessageResponse>("/", (req, res) => {
   });
 });
 
-app.use("/v1", dataRoutes);
+app.use("/api/v1", dataRoutes);
 
-app.use("/v1/providerData", providerData);
+app.use("/api/v1/providerData", providerData);
 
 app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);
