@@ -1,6 +1,32 @@
 import type express from "express";
 
+import { buildProviderMonthlyQuery, checkedFilter } from "../queryBuilders/providerMonthly.js";
 import { queryData } from "../services/queryService.js";
+
+export type MonthlyProviderData = {
+  provider_licensing_id: string;
+  provider_name: string;
+  StartOfMonth: string; // ISO DateString
+  billed_over_capacity_flag: boolean;
+  placed_over_capacity_flag: boolean;
+  same_address_flag: boolean;
+  distance_traveled_flag: boolean;
+  is_flagged: boolean;
+  comment: string;
+};
+
+export type UiMonthlyProviderData = {
+  providerLicensingId: string;
+  providerName: string;
+  overallRiskScore: number;
+  childrenBilledOverCapacity: string;
+  childrenPlacedOverCapacity: string;
+  distanceTraveled: string;
+  providersWithSameAddress: string;
+  flagged?: boolean;
+  comment?: string;
+  startOfMonth?: string;
+};
 
 // @desc    Update provider insight data - update comment or update flag status
 // @route   put /api/v1/providerData/insights/:id
@@ -31,7 +57,7 @@ export async function updateProviderDataInsights(req: express.Request, res: expr
         target.comment = source.comment
     WHEN NOT MATCHED THEN
     INSERT (provider_licensing_id, is_flagged, comment)
-    VALUES (source.provider_licensing_id, source.is_flagged, source.comment);`  
+    VALUES (source.provider_licensing_id, source.is_flagged, source.comment);`;
 
   //   'select * from cusp_audit.demo limit 10'
   try {
@@ -45,9 +71,9 @@ export async function updateProviderDataInsights(req: express.Request, res: expr
 }
 
 export async function getProviderAnnualData(req: express.Request, res: express.Response) {
-  console.log('HIT IT HERE')
-  const yearNum = parseInt(req.params.year, 10);
-  if (isNaN(yearNum) || yearNum < 1980 || yearNum > 2100) {
+  console.log("HIT IT HERE");
+  const yearNum = Number.parseInt(req.params.year, 10);
+  if (Number.isNaN(yearNum) || yearNum < 1980 || yearNum > 2100) {
     return res.status(400).json({ error: "Invalid year parameter" });
   }
 
@@ -119,4 +145,38 @@ export async function getProviderAnnualData(req: express.Request, res: express.R
   }
 }
 
+export async function getProviderMonthData(req: express.Request, res: express.Response) {
+  // TODO: verify this here
+  const body = req.body;
+  const flagged = checkedFilter(body);
 
+  const month = req.params.month;
+  const offset = String(req.query.offset);
+
+  const { text, namedParameters } = buildProviderMonthlyQuery({ offset, month, isFlagged: flagged });
+
+  try {
+    const rawData: MonthlyProviderData[] = await queryData(text, namedParameters);
+    // add overall risk score
+    const booleanKeys = ["billed_over_capacity_flag", "placed_over_capacity_flag", "same_address_flag", "distance_traveled_flag"] as const;
+    const result: UiMonthlyProviderData[] = rawData.map((item) => {
+      const overallRiskScore = booleanKeys.reduce((sum, key) => sum + (item[key] ? 1 : 0), 0);
+      return {
+        providerLicensingId: item.provider_licensing_id,
+        startOfMonth: item.StartOfMonth,
+        providerName: item.provider_name,
+        childrenBilledOverCapacity: item.billed_over_capacity_flag ? "Yes" : "--",
+        childrenPlacedOverCapacity: item.placed_over_capacity_flag ? "Yes" : "--",
+        distanceTraveled: item.distance_traveled_flag ? "Yes" : "--",
+        providersWithSameAddress: item.same_address_flag ? "Yes" : "--",
+        overallRiskScore,
+        flagged: item?.is_flagged || false,
+        comment: item?.comment || "",
+      };
+    });
+    res.json(result);
+  }
+  catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+}
