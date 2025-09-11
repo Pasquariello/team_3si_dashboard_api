@@ -148,9 +148,9 @@ export async function getProviderAnnualData(req: express.Request, res: express.R
 export async function getProviderMonthData(req: express.Request, res: express.Response) {
   // TODO: verify this here
   const month = req.params.month;
-  const offset = req?.query?.offset || "0";
-  const isFlagged = req?.query?.flagged === "true";
-  const isUnflagged = req?.query?.unflagged === "true";
+  const offset = req.query.offset || "0";
+  const isFlagged = req.query.flagged === "true";
+  const isUnflagged = req.query.unflagged === "true";
   const flagged = checkedFilter({ flagged: isFlagged, unflagged: isUnflagged });
 
   const { text, namedParameters } = buildProviderMonthlyQuery({ offset: String(offset), month, isFlagged: flagged });

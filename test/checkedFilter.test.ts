@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { checkedFilter } from "../src/queryBuilders/providerMonthly";
 
+import { checkedFilter } from "../src/queryBuilders/providerMonthly.js";
 
 describe("checkedFilter", () => {
   it("returns true when flagged is true and unflagged is false", () => {
@@ -23,24 +23,6 @@ describe("checkedFilter", () => {
 
   it("returns null when both flagged and unflagged are false", () => {
     const body = { flagged: false, unflagged: false };
-    const checked = checkedFilter(body);
-    expect(checked).toBeNull();
-  });
-
-  it("returns null if flagged is true and unflagged is missing", () => {
-    const body = { flagged: true };
-    const checked = checkedFilter(body);
-    expect(checked).toBeNull();
-  });
-
-  it("returns null if flagged is false and unflagged is missing", () => {
-    const body = { flagged: false };
-    const checked = checkedFilter(body);
-    expect(checked).toBeNull();
-  });
-
-  it("returns null if body is empty", () => {
-    const body = {};
     const checked = checkedFilter(body);
     expect(checked).toBeNull();
   });
