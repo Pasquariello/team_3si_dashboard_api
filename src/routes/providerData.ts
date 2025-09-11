@@ -19,13 +19,13 @@ router.get("/", async (req: express.Request, res: express.Response) => {
 });
 
 router.route("/annual/:year")
-  .get(getProviderAnnualData);
+  .get(authenticateJWT,getProviderAnnualData);
 
 router.route("/insights/:row_id")
   .put(updateProviderDataInsights);
 
 router.route("/month/:month")
-  .post(
+  .get(
     authenticateJWT,
     getProviderMonthData,
   );
