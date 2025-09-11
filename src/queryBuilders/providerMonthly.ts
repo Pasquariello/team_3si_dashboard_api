@@ -1,22 +1,22 @@
-import SQL from 'sql-template-strings';
+import SQL from "sql-template-strings";
 
 type BuildProviderMonthlyQueryParams = {
-  isFlagged: boolean | null
-  month: string
-  offset: string
-}
+  isFlagged: boolean | null;
+  month: string;
+  offset: string;
+};
 
-export function checkedFilter(body: any): boolean | null {
-  if (body.flagged && !body.unflagged)
+export function checkedFilter(filterOptions: { flagged: boolean, unflagged: boolean }): boolean | null {
+  if (filterOptions.flagged && !filterOptions.unflagged)
     return true;
-  if (!body.flagged && body.unflagged)
+  if (!filterOptions.flagged && filterOptions.unflagged)
     return false;
   return null;
 }
 
 export function parseMonthParam(monthParam: string) {
   // Expect format YYYY-MM
-  const regex = /^\d{4}-(0[1-9]|1[0-2])$/;
+  const regex = /^\d{4}-(?:0[1-9]|1[0-2])$/;
   if (!regex.test(monthParam)) {
     throw new Error("Invalid month format, expected YYYY-MM");
   }
@@ -25,13 +25,13 @@ export function parseMonthParam(monthParam: string) {
 
 export function parseOffsetParam(offsetParam: string): number {
   if (typeof offsetParam === "string") {
-    const parsed = parseInt(offsetParam, 10);
+    const parsed = Number.parseInt(offsetParam, 10);
     return Number.isNaN(parsed) || parsed < 0 ? 0 : parsed;
   }
   return 0;
 }
 
-export const buildProviderMonthlyQuery = ({ month, offset, isFlagged }: BuildProviderMonthlyQueryParams) => {
+export function buildProviderMonthlyQuery({ month, offset, isFlagged }: BuildProviderMonthlyQueryParams) {
   const query = SQL`
   SELECT rp.provider_licensing_id,
   rp.provider_name,
@@ -59,11 +59,10 @@ export const buildProviderMonthlyQuery = ({ month, offset, isFlagged }: BuildPro
   LEFT JOIN cusp_audit.demo.provider_insights pi ON rp.provider_licensing_id = pi.provider_licensing_id
   WHERE 1=1`;
 
-
   if (isFlagged !== null && isFlagged !== false) {
     query.append(SQL` AND pi.is_flagged = :isFlagged`);
   }
-  // get records that have not been flagged prior, then upflagged
+  // get records that have not been flagged prior, then unflagged
   if (isFlagged === false) {
     query.append(SQL` AND (pi.is_flagged IS NULL OR pi.is_flagged = :isFlagged)`);
   }
@@ -76,8 +75,8 @@ export const buildProviderMonthlyQuery = ({ month, offset, isFlagged }: BuildPro
   const namedParameters = {
     month: parseMonthParam(month),
     offset: parseOffsetParam(offset),
-    ...(isFlagged !== null ? { isFlagged: isFlagged } : {})
-  }
+    ...(isFlagged !== null ? { isFlagged } : {}),
+  };
 
-  return { text: query.text, namedParameters }
+  return { text: query.text, namedParameters };
 }
