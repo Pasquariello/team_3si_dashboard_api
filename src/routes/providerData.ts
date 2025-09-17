@@ -2,7 +2,7 @@ import type express from "express";
 
 import { Router } from "express";
 
-import { getProviderAnnualData, getProviderMonthData, updateProviderDataInsights } from "../controllers/providerData.js";
+import { getProviderAnnualData, getProviderCities, getProviderMonthData, updateProviderDataInsights } from "../controllers/providerData.js";
 import { authenticateJWT } from "../middlewares.js";
 import { queryData } from "../services/queryService.js";
 
@@ -29,5 +29,7 @@ router.route("/month/:month")
     authenticateJWT,
     getProviderMonthData,
   );
+
+router.route("/cities").get(authenticateJWT, getProviderCities)
 
 export default router;
