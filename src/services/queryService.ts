@@ -11,14 +11,14 @@
 //   }
 // }
 
+import type { ExecuteStatementOptions } from "@databricks/sql/dist/contracts/IDBSQLSession.js";
+
 import { connectToDatabricks } from "../config/databricks.js";
-import { ExecuteStatementOptions } from "@databricks/sql/dist/contracts/IDBSQLSession.js";
 
-export async function queryData(text: string, namedParameters?: ExecuteStatementOptions["namedParameters"] ): Promise<any[]> {
-
+export async function queryData(text: string, namedParameters?: ExecuteStatementOptions["namedParameters"]): Promise<any[]> {
   const client = await connectToDatabricks();
   const session = await client.openSession();
-  const operation = await session.executeStatement(text,  {namedParameters} );
+  const operation = await session.executeStatement(text, { namedParameters });
   const result = await operation.fetchAll();
 
   await operation.close();

@@ -1,5 +1,7 @@
 import type express from "express";
 
+import SQL from "sql-template-strings";
+
 import { buildProviderMonthlyQuery, checkedFilter } from "../queryBuilders/providerMonthly.js";
 import { queryData } from "../services/queryService.js";
 
@@ -13,6 +15,9 @@ export type MonthlyProviderData = {
   distance_traveled_flag: boolean;
   is_flagged: boolean;
   comment: string;
+  postal_address: string;
+  city: string;
+  zip: string;
 };
 
 export type UiMonthlyProviderData = {
@@ -26,6 +31,9 @@ export type UiMonthlyProviderData = {
   flagged?: boolean;
   comment?: string;
   startOfMonth?: string;
+  postalAddress: string;
+  city: string;
+  zip: string;
 };
 
 // @desc    Update provider insight data - update comment or update flag status
@@ -144,6 +152,35 @@ export async function getProviderAnnualData(req: express.Request, res: express.R
     res.status(500).json({ error: err.message });
   }
 }
+// TODO: add Index on city then add SORT BY then remove JS sort here
+export async function getProviderCities(req: express.Request, res: express.Response) {
+  const namedParameters = {
+    iLikeCity: `%${req.query.cityName || ""}%`,
+  };
+
+  const sql = SQL`SELECT DISTINCT city
+  FROM
+  cusp_audit.fake_data.addresses
+  WHERE 1=1
+  `;
+
+  if (req.params.iLikeCity) {
+    sql.append(SQL` AND city ILIKE :iLikeCity`);
+  }
+
+  sql.append(SQL` LIMIT 100`);
+
+  try {
+    const rawData = await queryData(sql.text, namedParameters);
+    res.json(rawData.sort(({ city: cityA }, { city: cityB }) => cityA.localeCompare(cityB)).reduce((acc, curr) => {
+      acc.push(curr.city);
+      return acc;
+    }, []));
+  }
+  catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+}
 
 export async function getProviderMonthData(req: express.Request, res: express.Response) {
   // TODO: verify this here
@@ -158,9 +195,10 @@ export async function getProviderMonthData(req: express.Request, res: express.Re
   try {
     const rawData: MonthlyProviderData[] = await queryData(text, namedParameters);
     // add overall risk score
-    const booleanKeys = ["billed_over_capacity_flag", "placed_over_capacity_flag", "same_address_flag", "distance_traveled_flag"] as const;
+    const riskScoreKeys = ["billed_over_capacity_flag", "placed_over_capacity_flag", "same_address_flag", "distance_traveled_flag"] as const;
     const result: UiMonthlyProviderData[] = rawData.map((item) => {
-      const overallRiskScore = booleanKeys.reduce((sum, key) => sum + (item[key] ? 1 : 0), 0);
+      const overallRiskScore = riskScoreKeys.reduce((sum, key) => sum + (item[key] ? 1 : 0), 0);
+
       return {
         providerLicensingId: item.provider_licensing_id,
         startOfMonth: item.StartOfMonth,
@@ -172,6 +210,9 @@ export async function getProviderMonthData(req: express.Request, res: express.Re
         overallRiskScore,
         flagged: item?.is_flagged || false,
         comment: item?.comment || "",
+        postalAddress: item.postal_address || "--",
+        city: item.city || "--",
+        zip: item.zip || "--",
       };
     });
     res.json(result);

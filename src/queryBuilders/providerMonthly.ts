@@ -41,7 +41,10 @@ export function buildProviderMonthlyQuery({ month, offset, isFlagged }: BuildPro
   sa.same_address_flag,
   dt.distance_traveled_flag,
   pi.is_flagged,
-  pi.comment
+  pi.comment,
+  a.postal_address,
+  a.city,
+  a.zip
   FROM (
       SELECT provider_licensing_id, StartOfMonth from cusp_audit.demo.monthly_billed_over_capacity WHERE StartOfMonth = :month
       UNION
@@ -57,6 +60,7 @@ export function buildProviderMonthlyQuery({ month, offset, isFlagged }: BuildPro
   LEFT JOIN cusp_audit.demo.monthly_providers_with_same_address sa ON sa.provider_licensing_id = dates.provider_licensing_id AND sa.StartOfMonth = dates.StartOfMonth
   LEFT JOIN cusp_audit.demo.monthly_distance_traveled dt ON dt.provider_licensing_id = dates.provider_licensing_id AND dt.StartOfMonth = dates.StartOfMonth
   LEFT JOIN cusp_audit.demo.provider_insights pi ON rp.provider_licensing_id = pi.provider_licensing_id
+  LEFT JOIN cusp_audit.fake_data.addresses a ON rp.provider_address_uid = a.provider_address_uid
   WHERE 1=1`;
 
   if (isFlagged !== null && isFlagged !== false) {
