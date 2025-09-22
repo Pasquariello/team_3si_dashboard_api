@@ -4,6 +4,7 @@ type BuildProviderMonthlyQueryParams = {
   isFlagged: boolean | null;
   month: string;
   offset: string;
+  cities: string[];
 };
 
 export function checkedFilter(filterOptions: { flagged: boolean, unflagged: boolean }): boolean | null {
@@ -31,7 +32,7 @@ export function parseOffsetParam(offsetParam: string): number {
   return 0;
 }
 
-export function buildProviderMonthlyQuery({ month, offset, isFlagged }: BuildProviderMonthlyQueryParams) {
+export function buildProviderMonthlyQuery({ month, offset, isFlagged, cities }: BuildProviderMonthlyQueryParams) {
   const query = SQL`
   SELECT rp.provider_licensing_id,
   rp.provider_name,
@@ -71,6 +72,10 @@ export function buildProviderMonthlyQuery({ month, offset, isFlagged }: BuildPro
     query.append(SQL` AND (pi.is_flagged IS NULL OR pi.is_flagged = :isFlagged)`);
   }
 
+  if (cities.length > 0) {
+    query.append(SQL` AND ARRAY_CONTAINS(TRANSFORM(SPLIT(:cities, ','), s -> TRIM(s)), a.city)`)
+  }
+
   // ---- append filter to the query above this line ----
   query.append(SQL` ORDER BY dates.StartOfMonth DESC`);
   // offset is set to change by 200 each time from FE
@@ -80,6 +85,7 @@ export function buildProviderMonthlyQuery({ month, offset, isFlagged }: BuildPro
     month: parseMonthParam(month),
     offset: parseOffsetParam(offset),
     ...(isFlagged !== null ? { isFlagged } : {}),
+    ...(cities.length > 0 ? { cities: cities.join(",") } : {})
   };
 
   return { text: query.text, namedParameters };

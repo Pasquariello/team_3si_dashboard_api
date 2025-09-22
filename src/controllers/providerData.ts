@@ -35,15 +35,6 @@ export type UiMonthlyProviderData = {
   city: string;
   zip: string;
 };
-export type UiAnnualProviderData = {
-    provider_licensing_id: string;
-    provider_name: string;
-    total_billed_over_capacity: number;
-    total_placed_over_capacity: number;
-    total_distance_traveled: number;
-    total_same_address: number;
-    overall_risk_score: number;
-}
 
 // @desc    Update provider insight data - update comment or update flag status
 // @route   put /api/v1/providerData/insights/:id
@@ -154,28 +145,8 @@ export async function getProviderAnnualData(req: express.Request, res: express.R
   `;
 
   try {
-    const rawData = await queryData(sqlQuery);
-      const result: UiAnnualProviderData[] = rawData.map((item) => {
-
-      return {
-        provider_licensing_id: item.provider_licensing_id,
-        provider_name: item.provider_name ? item.provider_name : "--",
-        total_billed_over_capacity: item.total_billed_over_capacity || 0,
-        total_placed_over_capacity: item.total_placed_over_capacity || 0,
-        total_distance_traveled: item.total_distance_traveled || 0,
-        total_same_address: item.total_same_address || 0,
-        overall_risk_score: item.overall_risk_score || 0
-        // flagged: item?.is_flagged || false,
-        // comment: item?.comment || "",
-        // postalAddress: item.postal_address || "--",
-        // city: item.city || "--",
-        // zip: item.zip || "--",
-      };
-    });
-
-
-
-    res.json(result);
+    const data = await queryData(sqlQuery);
+    res.json(data);
   }
   catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -193,7 +164,7 @@ export async function getProviderCities(req: express.Request, res: express.Respo
   WHERE 1=1
   `;
 
-  if (req.params.iLikeCity) {
+  if (req.query.cityName) {
     sql.append(SQL` AND city ILIKE :iLikeCity`);
   }
 
@@ -217,9 +188,17 @@ export async function getProviderMonthData(req: express.Request, res: express.Re
   const offset = req.query.offset || "0";
   const isFlagged = req.query.flagStatus === "true";
   const isUnflagged = req.query.flagStatus === "false";
-  const flagged = checkedFilter({ flagged: isFlagged, unflagged: isUnflagged });
 
-  const { text, namedParameters } = buildProviderMonthlyQuery({ offset: String(offset), month, isFlagged: flagged });
+const cities: string[] = Array.isArray(req.query.cities)
+  ? req.query.cities.map(String)
+  : req.query.cities
+  ? [String(req.query.cities)]
+  : [];
+
+  // we need to extract the values for city from the req.query then pass them to the build function
+  // update the build function to include the multi value where clause 
+  const flagged = checkedFilter({ flagged: isFlagged, unflagged: isUnflagged });
+  const { text, namedParameters } = buildProviderMonthlyQuery({ offset: String(offset), month, isFlagged: flagged, cities });
 
   try {
     const rawData: MonthlyProviderData[] = await queryData(text, namedParameters);
