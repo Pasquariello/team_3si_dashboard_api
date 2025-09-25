@@ -45,6 +45,57 @@ export type UiAnnualProviderData = {
     total_same_address: number;
     overall_risk_score: number;
 }
+
+//  TODO - clean up
+// @desc    Get provider overview data - overview data that will be displayed in FE dashboard cards
+// @route   put /api/v1/providerData/overview
+// @access  Private
+export async function getProviderCount(req: express.Request, res: express.Response) {
+  console.log('HIT getProviderOverviewData')
+
+  const sqlQuery = `
+    SELECT COUNT(DISTINCT provider_uid) AS unique_provider_count
+    FROM cusp_audit.demo.risk_providers ;
+  `;
+
+   try {
+    const data = await queryData(sqlQuery);
+    console.log('data', data)
+    res.json(data[0]);
+  }
+  catch (err: any) {
+    // console.log("err =======", err);
+    res.status(500).json({ error: err.message });
+  }
+
+}
+
+//  TODO - clean up
+// @desc    Get provider overview data - overview data that will be displayed in FE dashboard cards
+// @route   put /api/v1/providerData/overview
+// @access  Private
+export async function getFlaggedCount(req: express.Request, res: express.Response) {
+  console.log('HIT getFlaggedCount')
+
+  const sqlQuery = `
+    SELECT COUNT(DISTINCT provider_uid) AS unique_provider_count
+    FROM cusp_audit.demo.risk_providers ;
+  `;
+
+   try {
+    const data = await queryData(sqlQuery);
+    console.log('data', data)
+    res.json(data[0]);
+  }
+  catch (err: any) {
+    // console.log("err =======", err);
+    res.status(500).json({ error: err.message });
+  }
+
+}
+
+
+
 // @desc    Update provider insight data - update comment or update flag status
 // @route   put /api/v1/providerData/insights/:id
 // @access  Private
