@@ -35,6 +35,7 @@ export type UiMonthlyProviderData = {
   city: string;
   zip: string;
 };
+
 export type UiAnnualProviderData = {
     provider_licensing_id: string;
     provider_name: string;
@@ -45,6 +46,7 @@ export type UiAnnualProviderData = {
     overall_risk_score: number;
 }
 
+//  TODO - clean up
 // @desc    Get provider overview data - overview data that will be displayed in FE dashboard cards
 // @route   put /api/v1/providerData/overview
 // @access  Private
@@ -68,6 +70,7 @@ export async function getProviderCount(req: express.Request, res: express.Respon
 
 }
 
+//  TODO - clean up
 // @desc    Get provider overview data - overview data that will be displayed in FE dashboard cards
 // @route   put /api/v1/providerData/overview
 // @access  Private
@@ -202,7 +205,7 @@ export async function getProviderAnnualData(req: express.Request, res: express.R
   `;
 
   try {
-    const rawData = await queryData(sqlQuery);
+       const rawData = await queryData(sqlQuery);
       const result: UiAnnualProviderData[] = rawData.map((item) => {
 
       return {
@@ -241,7 +244,7 @@ export async function getProviderCities(req: express.Request, res: express.Respo
   WHERE 1=1
   `;
 
-  if (req.params.iLikeCity) {
+  if (req.query.cityName) {
     sql.append(SQL` AND city ILIKE :iLikeCity`);
   }
 
@@ -265,9 +268,17 @@ export async function getProviderMonthData(req: express.Request, res: express.Re
   const offset = req.query.offset || "0";
   const isFlagged = req.query.flagStatus === "true";
   const isUnflagged = req.query.flagStatus === "false";
-  const flagged = checkedFilter({ flagged: isFlagged, unflagged: isUnflagged });
 
-  const { text, namedParameters } = buildProviderMonthlyQuery({ offset: String(offset), month, isFlagged: flagged });
+const cities: string[] = Array.isArray(req.query.cities)
+  ? req.query.cities.map(String)
+  : req.query.cities
+  ? [String(req.query.cities)]
+  : [];
+
+  // we need to extract the values for city from the req.query then pass them to the build function
+  // update the build function to include the multi value where clause 
+  const flagged = checkedFilter({ flagged: isFlagged, unflagged: isUnflagged });
+  const { text, namedParameters } = buildProviderMonthlyQuery({ offset: String(offset), month, isFlagged: flagged, cities });
 
   try {
     const rawData: MonthlyProviderData[] = await queryData(text, namedParameters);
