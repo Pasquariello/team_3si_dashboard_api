@@ -2,7 +2,7 @@ import type express from "express";
 
 import { Router } from "express";
 
-import { getProviderAnnualData, getProviderCities, getProviderMonthData, updateProviderDataInsights, getProviderCount, getFlaggedCount } from "../controllers/providerData.js";
+import { getProviderAnnualData, getProviderCities, getProviderMonthData, updateProviderDataInsights, getProviderCount, getFlaggedCount, getProvidersWithHighRiskCount, getHighestRiskScore } from "../controllers/providerData.js";
 import { authenticateJWT } from "../middlewares.js";
 import { queryData } from "../services/queryService.js";
 
@@ -23,6 +23,12 @@ router.route("/providerCount")
 
 router.route("/flaggedCount")
   .get(authenticateJWT, getFlaggedCount);
+
+router.route("/highRiskScore")
+  .get(authenticateJWT, getHighestRiskScore);
+
+router.route("/highRiskScoreCount")
+  .get(authenticateJWT, getProvidersWithHighRiskCount);
 
 
 router.route("/annual/:year")
