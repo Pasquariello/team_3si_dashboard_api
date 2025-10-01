@@ -46,6 +46,141 @@ export type UiAnnualProviderData = {
     overall_risk_score: number;
 }
 
+
+//  TODO - clean up
+// @desc    Get provider overview data - overview data that will be displayed in FE dashboard cards
+// @route   put /api/v1/providerData/overview
+// @access  Private
+export async function exportProviderData(req: express.Request, res: express.Response) {
+  const yearNum = Number.parseInt(req.params.year, 10);
+  console.log("HERE", yearNum)
+  if (Number.isNaN(yearNum) || yearNum < 1980 || yearNum > 2100) {
+    return res.status(400).json({ error: "Invalid year parameter" });
+  }
+
+  const sqlQuery = `
+    WITH combined AS (
+      SELECT
+        COALESCE(b.provider_licensing_id, p.provider_licensing_id, d.provider_licensing_id, s.provider_licensing_id) AS provider_licensing_id,
+        COALESCE(b.total_billed_over_capacity, 0) AS total_billed_over_capacity,
+        COALESCE(p.total_placed_over_capacity, 0) AS total_placed_over_capacity,
+        COALESCE(d.total_distance_traveled, 0) AS total_distance_traveled,
+        COALESCE(s.total_same_address, 0) AS total_same_address,
+
+        COALESCE(b.total_billed_over_capacity, 0) +
+        COALESCE(p.total_placed_over_capacity, 0) +
+        COALESCE(d.total_distance_traveled, 0) +
+        COALESCE(s.total_same_address, 0) AS overall_risk_score
+      FROM (
+        SELECT provider_licensing_id,
+          SUM(CASE WHEN billed_over_capacity_flag THEN 1 ELSE 0 END) AS total_billed_over_capacity    
+        FROM cusp_audit.demo.monthly_billed_over_capacity
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
+        GROUP BY provider_licensing_id
+      ) b
+      FULL OUTER JOIN (
+        SELECT provider_licensing_id, 
+          SUM(CASE WHEN placed_over_capacity_flag THEN 1 ELSE 0 END) AS total_placed_over_capacity    
+        FROM cusp_audit.demo.monthly_placed_over_capacity
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
+        GROUP BY provider_licensing_id
+      ) p
+        ON b.provider_licensing_id = p.provider_licensing_id
+      FULL OUTER JOIN (
+        SELECT provider_licensing_id, 
+          SUM(CASE WHEN distance_traveled_flag THEN 1 ELSE 0 END) AS total_distance_traveled   
+        FROM cusp_audit.demo.monthly_distance_traveled
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
+        GROUP BY provider_licensing_id
+      ) d
+        ON COALESCE(b.provider_licensing_id, p.provider_licensing_id) = d.provider_licensing_id
+      FULL OUTER JOIN (
+        SELECT provider_licensing_id, 
+          SUM(CASE WHEN same_address_flag THEN 1 ELSE 0 END) AS total_same_address      
+        FROM cusp_audit.demo.monthly_providers_with_same_address
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
+        GROUP BY provider_licensing_id
+      ) s
+        ON COALESCE(b.provider_licensing_id, p.provider_licensing_id, d.provider_licensing_id) = s.provider_licensing_id
+    )
+    SELECT
+      c.provider_licensing_id,
+      pa.provider_name,
+      c.total_billed_over_capacity,
+      c.total_placed_over_capacity,
+      c.total_distance_traveled,
+      c.total_same_address,
+      c.overall_risk_score
+    FROM combined c
+    LEFT JOIN cusp_audit.demo.provider_attributes pa
+      ON c.provider_licensing_id = pa.provider_licensing_id
+    ORDER BY c.provider_licensing_id;
+  `;
+
+  try {
+ 
+      const rawData = await queryData(sqlQuery);
+      const result: UiAnnualProviderData[] = rawData.map((item) => {
+
+      return {
+        provider_licensing_id: item.provider_licensing_id,
+        provider_name: item.provider_name ? item.provider_name : "--",
+        total_billed_over_capacity: item.total_billed_over_capacity || 0,
+        total_placed_over_capacity: item.total_placed_over_capacity || 0,
+        total_distance_traveled: item.total_distance_traveled || 0,
+        total_same_address: item.total_same_address || 0,
+        overall_risk_score: item.overall_risk_score || 0
+        // flagged: item?.is_flagged || false,
+        // comment: item?.comment || "",
+        // postalAddress: item.postal_address || "--",
+        // city: item.city || "--",
+        // zip: item.zip || "--",
+      };
+    });
+
+
+    // console.log("REESULT", result)
+    // res.json(result);
+
+     // Build CSV manually
+    const headers = [
+      "provider_licensing_id",
+      "provider_name",
+      "total_billed_over_capacity",
+      "total_placed_over_capacity",
+      "total_distance_traveled",
+      "total_same_address",
+      "overall_risk_score"
+    ];
+
+    const escape = (val: any) => {
+      if (val === null || val === undefined) return "";
+      const str = String(val);
+      return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+    };
+
+    const csvRows = [
+      headers.join(","), // header row
+      ...result.map((row) =>
+        headers.map((h) => escape((row as any)[h])).join(",")
+      )
+    ];
+
+    const csv = csvRows.join("\n");
+
+    // Set headers for download
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="providers_${yearNum}.csv"`);
+
+    res.send(csv);
+}
+  catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+
+}
+
+
 //  TODO - clean up
 // @desc    Get provider overview data - overview data that will be displayed in FE dashboard cards
 // @route   put /api/v1/providerData/overview
@@ -267,6 +402,7 @@ export async function updateProviderDataInsights(req: express.Request, res: expr
 
 export async function getProviderAnnualData(req: express.Request, res: express.Response) {
   const yearNum = Number.parseInt(req.params.year, 10);
+  console.log("HERE", yearNum)
   if (Number.isNaN(yearNum) || yearNum < 1980 || yearNum > 2100) {
     return res.status(400).json({ error: "Invalid year parameter" });
   }
@@ -331,7 +467,7 @@ export async function getProviderAnnualData(req: express.Request, res: express.R
   `;
 
   try {
-       const rawData = await queryData(sqlQuery);
+      const rawData = await queryData(sqlQuery);
       const result: UiAnnualProviderData[] = rawData.map((item) => {
 
       return {
@@ -351,7 +487,7 @@ export async function getProviderAnnualData(req: express.Request, res: express.R
     });
 
 
-
+    console.log("REESULT", result)
     res.json(result);
   }
   catch (err: any) {
@@ -433,5 +569,89 @@ const cities: string[] = Array.isArray(req.query.cities)
   }
   catch (err: any) {
     res.status(500).json({ error: err.message });
+  }
+}
+
+
+const getProviderAnnualDataUtility = async (yearNum: number) => {
+  if (Number.isNaN(yearNum) || yearNum < 1980 || yearNum > 2100) {
+    // return res.status(400).json({ error: "Invalid year parameter" });
+  }
+
+  const sqlQuery = `
+    WITH combined AS (
+      SELECT
+        COALESCE(b.provider_licensing_id, p.provider_licensing_id, d.provider_licensing_id, s.provider_licensing_id) AS provider_licensing_id,
+        COALESCE(b.total_billed_over_capacity, 0) AS total_billed_over_capacity,
+        COALESCE(p.total_placed_over_capacity, 0) AS total_placed_over_capacity,
+        COALESCE(d.total_distance_traveled, 0) AS total_distance_traveled,
+        COALESCE(s.total_same_address, 0) AS total_same_address,
+
+        COALESCE(b.total_billed_over_capacity, 0) +
+        COALESCE(p.total_placed_over_capacity, 0) +
+        COALESCE(d.total_distance_traveled, 0) +
+        COALESCE(s.total_same_address, 0) AS overall_risk_score
+      FROM (
+        SELECT provider_licensing_id,
+          SUM(CASE WHEN billed_over_capacity_flag THEN 1 ELSE 0 END) AS total_billed_over_capacity    
+        FROM cusp_audit.demo.monthly_billed_over_capacity
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
+        GROUP BY provider_licensing_id
+      ) b
+      FULL OUTER JOIN (
+        SELECT provider_licensing_id, 
+          SUM(CASE WHEN placed_over_capacity_flag THEN 1 ELSE 0 END) AS total_placed_over_capacity    
+        FROM cusp_audit.demo.monthly_placed_over_capacity
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
+        GROUP BY provider_licensing_id
+      ) p
+        ON b.provider_licensing_id = p.provider_licensing_id
+      FULL OUTER JOIN (
+        SELECT provider_licensing_id, 
+          SUM(CASE WHEN distance_traveled_flag THEN 1 ELSE 0 END) AS total_distance_traveled   
+        FROM cusp_audit.demo.monthly_distance_traveled
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
+        GROUP BY provider_licensing_id
+      ) d
+        ON COALESCE(b.provider_licensing_id, p.provider_licensing_id) = d.provider_licensing_id
+      FULL OUTER JOIN (
+        SELECT provider_licensing_id, 
+          SUM(CASE WHEN same_address_flag THEN 1 ELSE 0 END) AS total_same_address      
+        FROM cusp_audit.demo.monthly_providers_with_same_address
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
+        GROUP BY provider_licensing_id
+      ) s
+        ON COALESCE(b.provider_licensing_id, p.provider_licensing_id, d.provider_licensing_id) = s.provider_licensing_id
+    )
+    SELECT
+      c.provider_licensing_id,
+      pa.provider_name,
+      c.total_billed_over_capacity,
+      c.total_placed_over_capacity,
+      c.total_distance_traveled,
+      c.total_same_address,
+      c.overall_risk_score
+    FROM combined c
+    LEFT JOIN cusp_audit.demo.provider_attributes pa
+      ON c.provider_licensing_id = pa.provider_licensing_id
+    ORDER BY c.provider_licensing_id;
+  `;
+
+  try {
+      const rawData = await queryData(sqlQuery);
+      const result: UiAnnualProviderData[] = rawData.map((item) => {
+
+      return {
+        provider_licensing_id: item.provider_licensing_id,
+        provider_name: item.provider_name ? item.provider_name : "--",
+        total_billed_over_capacity: item.total_billed_over_capacity || 0,
+        total_placed_over_capacity: item.total_placed_over_capacity || 0,
+        total_distance_traveled: item.total_distance_traveled || 0,
+        total_same_address: item.total_same_address || 0,
+        overall_risk_score: item.overall_risk_score || 0
+      };
+    });
+  } catch (err: any) {
+    // res.status(500).json({ error: err.message });
   }
 }

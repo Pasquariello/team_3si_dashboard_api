@@ -2,7 +2,7 @@ import type express from "express";
 
 import { Router } from "express";
 
-import { getProviderAnnualData, getProviderCities, getProviderMonthData, updateProviderDataInsights, getProviderCount, getFlaggedCount, getProvidersWithHighRiskCount, getHighestRiskScore } from "../controllers/providerData.js";
+import { getProviderAnnualData, getProviderCities, getProviderMonthData, updateProviderDataInsights, getProviderCount, getFlaggedCount, getProvidersWithHighRiskCount, getHighestRiskScore, exportProviderData } from "../controllers/providerData.js";
 import { authenticateJWT } from "../middlewares.js";
 import { queryData } from "../services/queryService.js";
 
@@ -17,6 +17,9 @@ router.get("/", async (req: express.Request, res: express.Response) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+router.route("/export/:year")
+  .get(authenticateJWT, exportProviderData);
 
 router.route("/providerCount")
   .get(authenticateJWT, getProviderCount);
