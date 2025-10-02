@@ -36,16 +36,35 @@ export type UiMonthlyProviderData = {
   zip: string;
 };
 
-export type UiAnnualProviderData = {
-    provider_licensing_id: string;
-    provider_name: string;
-    total_billed_over_capacity: number;
-    total_placed_over_capacity: number;
-    total_distance_traveled: number;
-    total_same_address: number;
-    overall_risk_score: number;
-}
+export type AnnualProviderData = {
+  provider_licensing_id: string;
+  provider_name: string;
+  StartOfMonth: string; // ISO DateString
+  billed_over_capacity_flag: boolean;
+  placed_over_capacity_flag: boolean;
+  same_address_flag: boolean;
+  distance_traveled_flag: boolean;
+  is_flagged: boolean;
+  comment: string;
+  postal_address: string;
+  city: string;
+  zip: string;
+};
 
+export type UiAnnualProviderData = {
+  providerLicensingId: string;
+  providerName: string;
+  childrenBilledOverCapacity: number;
+  childrenPlacedOverCapacity: number;
+  distanceTraveled: number;
+  overallRiskScore: number;
+  providersWithSameAddress: number;
+  flagged: boolean;
+  comment: string;
+  postalAddress: string;
+  city: string; 
+  zip: string;
+};
 
 //  TODO - clean up
 // @desc    Get provider overview data - overview data that will be displayed in FE dashboard cards
