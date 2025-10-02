@@ -3,6 +3,7 @@ import type express from "express";
 import SQL from "sql-template-strings";
 
 import { buildProviderMonthlyQuery, checkedFilter } from "../queryBuilders/providerMonthly.js";
+import { buildProviderYearlyQuery } from "../queryBuilders/providerYearly.js";
 import { queryData } from "../services/queryService.js";
 
 export type MonthlyProviderData = {
@@ -72,7 +73,7 @@ export type UiAnnualProviderData = {
 // @access  Private
 export async function exportProviderData(req: express.Request, res: express.Response) {
   const yearNum = Number.parseInt(req.params.year, 10);
-  console.log("HERE", yearNum)
+  console.log("HERE", yearNum);
   if (Number.isNaN(yearNum) || yearNum < 1980 || yearNum > 2100) {
     return res.status(400).json({ error: "Invalid year parameter" });
   }
@@ -137,10 +138,8 @@ export async function exportProviderData(req: express.Request, res: express.Resp
   `;
 
   try {
- 
-      const rawData = await queryData(sqlQuery);
-      const result: UiAnnualProviderData[] = rawData.map((item) => {
-
+    const rawData = await queryData(sqlQuery);
+    const result: Partial<AnnualProviderData>[] = rawData.map((item) => {
       return {
         provider_licensing_id: item.provider_licensing_id,
         provider_name: item.provider_name ? item.provider_name : "--",
@@ -148,7 +147,7 @@ export async function exportProviderData(req: express.Request, res: express.Resp
         total_placed_over_capacity: item.total_placed_over_capacity || 0,
         total_distance_traveled: item.total_distance_traveled || 0,
         total_same_address: item.total_same_address || 0,
-        overall_risk_score: item.overall_risk_score || 0
+        overall_risk_score: item.overall_risk_score || 0,
         // flagged: item?.is_flagged || false,
         // comment: item?.comment || "",
         // postalAddress: item.postal_address || "--",
@@ -157,11 +156,10 @@ export async function exportProviderData(req: express.Request, res: express.Resp
       };
     });
 
-
     // console.log("REESULT", result)
     // res.json(result);
 
-     // Build CSV manually
+    // Build CSV manually
     const headers = [
       "provider_licensing_id",
       "provider_name",
@@ -169,20 +167,21 @@ export async function exportProviderData(req: express.Request, res: express.Resp
       "total_placed_over_capacity",
       "total_distance_traveled",
       "total_same_address",
-      "overall_risk_score"
+      "overall_risk_score",
     ];
 
     const escape = (val: any) => {
-      if (val === null || val === undefined) return "";
+      if (val === null || val === undefined)
+        return "";
       const str = String(val);
-      return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+      return /[",\n]/.test(str) ? `"${str.replace(/"/g, "\"\"")}"` : str;
     };
 
     const csvRows = [
       headers.join(","), // header row
-      ...result.map((row) =>
-        headers.map((h) => escape((row as any)[h])).join(",")
-      )
+      ...result.map(row =>
+        headers.map(h => escape((row as any)[h])).join(","),
+      ),
     ];
 
     const csv = csvRows.join("\n");
@@ -192,26 +191,23 @@ export async function exportProviderData(req: express.Request, res: express.Resp
     res.setHeader("Content-Disposition", `attachment; filename="providers_${yearNum}.csv"`);
 
     res.send(csv);
-}
+  }
   catch (err: any) {
     res.status(500).json({ error: err.message });
   }
-
 }
-
 
 //  TODO - clean up
 // @desc    Get provider overview data - overview data that will be displayed in FE dashboard cards
 // @route   put /api/v1/providerData/overview
 // @access  Private
 export async function getProviderCount(req: express.Request, res: express.Response) {
-
   const sqlQuery = `
     SELECT COUNT(DISTINCT provider_uid) AS unique_provider_count
     FROM cusp_audit.demo.risk_providers;
   `;
 
-   try {
+  try {
     const data = await queryData(sqlQuery);
     res.json(data[0]);
   }
@@ -221,13 +217,12 @@ export async function getProviderCount(req: express.Request, res: express.Respon
   }
 }
 
-
 //  TODO - clean up
 // @desc    Get provider overview data - overview data that will be displayed in FE dashboard cards
 // @route   put /api/v1/providerData/overview
 // @access  Private
 export async function getHighestRiskScore(req: express.Request, res: express.Response) {
-  console.log('HIT getHighestRiskScore')
+  console.log("HIT getHighestRiskScore");
 
   const sqlQuery = `
     WITH combined AS (
@@ -281,9 +276,9 @@ export async function getHighestRiskScore(req: express.Request, res: express.Res
 
   `;
 
-   try {
+  try {
     const data = await queryData(sqlQuery);
-    console.log('highRiskScore data ====', data)
+    console.log("highRiskScore data ====", data);
     res.json(data[0]);
   }
   catch (err: any) {
@@ -297,7 +292,6 @@ export async function getHighestRiskScore(req: express.Request, res: express.Res
 // @route   put /api/v1/providerData/overview
 // @access  Private
 export async function getProvidersWithHighRiskCount(req: express.Request, res: express.Response) {
-
   const sqlQuery = `
     WITH combined AS (
       SELECT
@@ -344,7 +338,7 @@ export async function getProvidersWithHighRiskCount(req: express.Request, res: e
     WHERE overall_risk_score > 44;
   `;
 
-   try {
+  try {
     const data = await queryData(sqlQuery);
     res.json(data[0]);
   }
@@ -358,13 +352,12 @@ export async function getProvidersWithHighRiskCount(req: express.Request, res: e
 // @route   put /api/v1/providerData/overview
 // @access  Private
 export async function getFlaggedCount(req: express.Request, res: express.Response) {
-
   const sqlQuery = `
     SELECT COUNT(DISTINCT provider_uid) AS unique_provider_count
     FROM cusp_audit.demo.risk_providers ;
   `;
 
-   try {
+  try {
     const data = await queryData(sqlQuery);
     res.json(data[0]);
   }
@@ -372,10 +365,7 @@ export async function getFlaggedCount(req: express.Request, res: express.Respons
     // console.log("err =======", err);
     res.status(500).json({ error: err.message });
   }
-
 }
-
-
 
 // @desc    Update provider insight data - update comment or update flag status
 // @route   put /api/v1/providerData/insights/:id
@@ -503,15 +493,16 @@ export async function getProviderMonthData(req: express.Request, res: express.Re
   const isFlagged = req.query.flagStatus === "true";
   const isUnflagged = req.query.flagStatus === "false";
 
-const cities: string[] = Array.isArray(req.query.cities)
-  ? req.query.cities.map(String)
-  : req.query.cities
-  ? [String(req.query.cities)]
-  : [];
+  const cities: string[] = Array.isArray(req.query.cities)
+    ? req.query.cities.map(String)
+    : req.query.cities
+      ? [String(req.query.cities)]
+      : [];
 
   // we need to extract the values for city from the req.query then pass them to the build function
-  // update the build function to include the multi value where clause 
+  // update the build function to include the multi value where clause
   const flagged = checkedFilter({ flagged: isFlagged, unflagged: isUnflagged });
+
   const { text, namedParameters } = buildProviderMonthlyQuery({ offset: String(offset), month, isFlagged: flagged, cities });
 
   try {
@@ -544,8 +535,7 @@ const cities: string[] = Array.isArray(req.query.cities)
   }
 }
 
-
-const getProviderAnnualDataUtility = async (yearNum: number) => {
+async function getProviderAnnualDataUtility(yearNum: number) {
   if (Number.isNaN(yearNum) || yearNum < 1980 || yearNum > 2100) {
     // return res.status(400).json({ error: "Invalid year parameter" });
   }
@@ -610,9 +600,8 @@ const getProviderAnnualDataUtility = async (yearNum: number) => {
   `;
 
   try {
-      const rawData = await queryData(sqlQuery);
-      const result: UiAnnualProviderData[] = rawData.map((item) => {
-
+    const rawData = await queryData(sqlQuery);
+    const result: UiAnnualProviderData[] = rawData.map((item) => {
       return {
         provider_licensing_id: item.provider_licensing_id,
         provider_name: item.provider_name ? item.provider_name : "--",
@@ -620,10 +609,11 @@ const getProviderAnnualDataUtility = async (yearNum: number) => {
         total_placed_over_capacity: item.total_placed_over_capacity || 0,
         total_distance_traveled: item.total_distance_traveled || 0,
         total_same_address: item.total_same_address || 0,
-        overall_risk_score: item.overall_risk_score || 0
+        overall_risk_score: item.overall_risk_score || 0,
       };
     });
-  } catch (err: any) {
+  }
+  catch (err: any) {
     // res.status(500).json({ error: err.message });
   }
 }
