@@ -35,39 +35,40 @@ export function parseOffsetParam(offsetParam: string): number {
 export function buildProviderMonthlyQuery({ month, offset, isFlagged, cities }: BuildProviderMonthlyQueryParams) {
 
   const query= SQL`
-  SELECT
-    dates.provider_licensing_id,
-    rp.provider_name,
-    pi.is_flagged,
-    pi.comment,
-    a.postal_address,
-    a.city,
-    a.zip,
-    dates.startOfMonth,
-    dates.over_billed_capacity,
-    dates.over_placement_capacity,
-    dates.same_address_flag,
-    dates.distance_traveled_flag,
-    (
-        coalesce(dates.over_billed_capacity::int, 0) +
-        coalesce(dates.over_placement_capacity::int, 0) +
-        coalesce(dates.same_address_flag::int, 0) +
-        coalesce(dates.distance_traveled_flag::int, 0)
-    ) as total
-  FROM (
-      SELECT 
+WITH dates AS (
+    SELECT 
         StartOfMonth,
         over_billed_capacity,
         over_placement_capacity,
         same_address_flag,
         distance_traveled_flag,
         provider_licensing_id
-      FROM cusp_audit.demo.risk_scores 
-      WHERE StartOfMonth = to_timestamp('2024-08-01', 'yyyy-MM-dd')
-  ) as dates
-  JOIN cusp_audit.demo.risk_providers rp ON rp.provider_licensing_id = dates.provider_licensing_id
-  LEFT JOIN cusp_audit.demo.provider_insights pi ON rp.provider_licensing_id = pi.provider_licensing_id
-  LEFT JOIN cusp_audit.fake_data.addresses a ON rp.provider_address_uid = a.provider_address_uid
+    FROM cusp_audit.demo.risk_scores 
+    WHERE StartOfMonth = :month
+)
+SELECT
+dates.provider_licensing_id,
+rp.provider_name,
+pi.is_flagged,
+pi.comment,
+a.postal_address,
+a.city,
+a.zip,
+dates.startOfMonth,
+dates.over_billed_capacity,
+dates.over_placement_capacity,
+dates.same_address_flag,
+dates.distance_traveled_flag
+(
+    coalesce(dates.over_billed_capacity::int, 0) +
+    coalesce(dates.over_placement_capacity::int, 0) +
+    coalesce(dates.same_address_flag::int, 0) +
+    coalesce(dates.distance_traveled_flag::int, 0)
+) as total
+FROM dates
+JOIN cusp_audit.demo.risk_providers rp ON rp.provider_licensing_id = dates.provider_licensing_id
+LEFT JOIN cusp_audit.demo.provider_insights pi ON rp.provider_licensing_id = pi.provider_licensing_id
+LEFT JOIN cusp_audit.fake_data.addresses a ON rp.provider_address_uid = a.provider_address_uid
   WHERE 1=1`;
 
   if (isFlagged !== null && isFlagged !== false) {
