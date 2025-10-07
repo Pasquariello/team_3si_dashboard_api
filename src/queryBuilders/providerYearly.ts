@@ -89,7 +89,7 @@ export function buildProviderYearlyQuery({ year, offset, isFlagged, cities }: Bu
   }
 
   // ---- append filter to the sqlQuery above this line ----
-  sqlQuery.append(SQL` ORDER BY c.provider_licensing_id`);
+  sqlQuery.append(SQL` ORDER BY c.overall_risk_score DESC`);
   // offset is set to change by 200 each time from FE
   sqlQuery.append(SQL` limit 200 offset :offset`);
 
