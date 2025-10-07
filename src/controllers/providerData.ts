@@ -14,6 +14,7 @@ export type MonthlyProviderData = {
   over_placement_capacity: number;
   same_address_flag: number;
   distance_traveled_flag: number;
+  total: number,
   is_flagged: boolean;
   comment: string;
   postal_address: string;
@@ -516,10 +517,7 @@ export async function getProviderMonthData(req: express.Request, res: express.Re
 
   try {
     const rawData: MonthlyProviderData[] = await queryData(text, namedParameters);
-    // add overall risk score
-    const riskScoreKeys = ["over_billed_capacity", "over_placement_capacity", "same_address_flag", "distance_traveled_flag"] as const;
     const result: UiMonthlyProviderData[] = rawData.map((item) => {
-      const overallRiskScore = riskScoreKeys.reduce((sum, key) => sum + (item[key] ? 1 : 0), 0);
 
       return {
         providerLicensingId: item.provider_licensing_id,
@@ -529,7 +527,7 @@ export async function getProviderMonthData(req: express.Request, res: express.Re
         childrenPlacedOverCapacity: item.over_placement_capacity ? "Yes" : "--",
         distanceTraveled: item.distance_traveled_flag ? "Yes" : "--",
         providersWithSameAddress: item.same_address_flag ? "Yes" : "--",
-        overallRiskScore,
+        overallRiskScore: item.total || 0,
         flagged: item?.is_flagged || false,
         comment: item?.comment || "",
         postalAddress: item.postal_address || "--",

@@ -35,21 +35,36 @@ export function parseOffsetParam(offsetParam: string): number {
 export function buildProviderMonthlyQuery({ month, offset, isFlagged, cities }: BuildProviderMonthlyQueryParams) {
 
   const query= SQL`
-  SELECT rp.provider_licensing_id,
-  rp.provider_name,
-  dates.StartOfMonth,
-  dates.over_billed_capacity,
-  dates.over_placement_capacity,
-  dates.same_address_flag,
-  dates.distance_traveled_flag,
-  pi.is_flagged,
-  pi.comment,
-  a.postal_address,
-  a.city,
-  a.zip
+  SELECT
+    dates.provider_licensing_id,
+    rp.provider_name,
+    pi.is_flagged,
+    pi.comment,
+    a.postal_address,
+    a.city,
+    a.zip,
+    dates.startOfMonth,
+    dates.over_billed_capacity,
+    dates.over_placement_capacity,
+    dates.same_address_flag,
+    dates.distance_traveled_flag,
+    (
+        coalesce(dates.over_billed_capacity::int, 0) +
+        coalesce(dates.over_placement_capacity::int, 0) +
+        coalesce(dates.same_address_flag::int, 0) +
+        coalesce(dates.distance_traveled_flag::int, 0)
+    ) as total
   FROM (
-      SELECT provider_licensing_id, StartOfMonth, over_placement_capacity, same_address_flag, distance_traveled_flag, over_billed_capacity, same_address_flag from cusp_audit.demo.risk_scores WHERE StartOfMonth = :month
-  ) AS dates
+      SELECT 
+        StartOfMonth,
+        over_billed_capacity,
+        over_placement_capacity,
+        same_address_flag,
+        distance_traveled_flag,
+        provider_licensing_id
+      FROM cusp_audit.demo.risk_scores 
+      WHERE StartOfMonth = to_timestamp('2024-08-01', 'yyyy-MM-dd')
+  ) as dates
   JOIN cusp_audit.demo.risk_providers rp ON rp.provider_licensing_id = dates.provider_licensing_id
   LEFT JOIN cusp_audit.demo.provider_insights pi ON rp.provider_licensing_id = pi.provider_licensing_id
   LEFT JOIN cusp_audit.fake_data.addresses a ON rp.provider_address_uid = a.provider_address_uid
@@ -68,7 +83,7 @@ export function buildProviderMonthlyQuery({ month, offset, isFlagged, cities }: 
   }
 
   // ---- append filter to the query above this line ----
-  query.append(SQL` ORDER BY dates.StartOfMonth DESC`);
+  query.append(SQL` ORDER BY total DESC`);
   // offset is set to change by 200 each time from FE
   query.append(SQL` limit 200 offset :offset`);
 
