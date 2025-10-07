@@ -209,7 +209,7 @@ export async function getProviderCount(req: express.Request, res: express.Respon
 // @access  Private
 export async function getHighestRiskScore(req: express.Request, res: express.Response) {
   console.log('HIT getHighestRiskScore')
-
+  const yearNum = 2024;
   const sqlQuery = `
     WITH combined AS (
       SELECT
@@ -222,12 +222,14 @@ export async function getHighestRiskScore(req: express.Request, res: express.Res
         SELECT provider_licensing_id,
           SUM(CASE WHEN billed_over_capacity_flag THEN 1 ELSE 0 END) AS total_billed_over_capacity    
         FROM cusp_audit.demo.monthly_billed_over_capacity
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
         GROUP BY provider_licensing_id
       ) b
       FULL OUTER JOIN (
         SELECT provider_licensing_id, 
           SUM(CASE WHEN placed_over_capacity_flag THEN 1 ELSE 0 END) AS total_placed_over_capacity    
         FROM cusp_audit.demo.monthly_placed_over_capacity
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
         GROUP BY provider_licensing_id
       ) p
         ON b.provider_licensing_id = p.provider_licensing_id
@@ -235,6 +237,7 @@ export async function getHighestRiskScore(req: express.Request, res: express.Res
         SELECT provider_licensing_id, 
           SUM(CASE WHEN distance_traveled_flag THEN 1 ELSE 0 END) AS total_distance_traveled   
         FROM cusp_audit.demo.monthly_distance_traveled
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
         GROUP BY provider_licensing_id
       ) d
         ON COALESCE(b.provider_licensing_id, p.provider_licensing_id) = d.provider_licensing_id
@@ -242,6 +245,7 @@ export async function getHighestRiskScore(req: express.Request, res: express.Res
         SELECT provider_licensing_id, 
           SUM(CASE WHEN same_address_flag THEN 1 ELSE 0 END) AS total_same_address      
         FROM cusp_audit.demo.monthly_providers_with_same_address
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
         GROUP BY provider_licensing_id
       ) s
         ON COALESCE(b.provider_licensing_id, p.provider_licensing_id, d.provider_licensing_id) = s.provider_licensing_id
@@ -278,7 +282,7 @@ export async function getHighestRiskScore(req: express.Request, res: express.Res
 // @route   put /api/v1/providerData/overview
 // @access  Private
 export async function getProvidersWithHighRiskCount(req: express.Request, res: express.Response) {
-
+  const yearNum =2024;
   const sqlQuery = `
     WITH combined AS (
       SELECT
@@ -296,12 +300,14 @@ export async function getProvidersWithHighRiskCount(req: express.Request, res: e
         SELECT provider_licensing_id,
           SUM(CASE WHEN billed_over_capacity_flag THEN 1 ELSE 0 END) AS total_billed_over_capacity    
         FROM cusp_audit.demo.monthly_billed_over_capacity
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
         GROUP BY provider_licensing_id
       ) b
       FULL OUTER JOIN (
         SELECT provider_licensing_id, 
           SUM(CASE WHEN placed_over_capacity_flag THEN 1 ELSE 0 END) AS total_placed_over_capacity    
         FROM cusp_audit.demo.monthly_placed_over_capacity
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
         GROUP BY provider_licensing_id
       ) p
         ON b.provider_licensing_id = p.provider_licensing_id
@@ -309,6 +315,7 @@ export async function getProvidersWithHighRiskCount(req: express.Request, res: e
         SELECT provider_licensing_id, 
           SUM(CASE WHEN distance_traveled_flag THEN 1 ELSE 0 END) AS total_distance_traveled   
         FROM cusp_audit.demo.monthly_distance_traveled
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
         GROUP BY provider_licensing_id
       ) d
         ON COALESCE(b.provider_licensing_id, p.provider_licensing_id) = d.provider_licensing_id
@@ -316,6 +323,7 @@ export async function getProvidersWithHighRiskCount(req: express.Request, res: e
         SELECT provider_licensing_id, 
           SUM(CASE WHEN same_address_flag THEN 1 ELSE 0 END) AS total_same_address      
         FROM cusp_audit.demo.monthly_providers_with_same_address
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
         GROUP BY provider_licensing_id
       ) s
         ON COALESCE(b.provider_licensing_id, p.provider_licensing_id, d.provider_licensing_id) = s.provider_licensing_id
