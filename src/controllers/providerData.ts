@@ -407,7 +407,7 @@ export async function getFlaggedCount(req: express.Request, res: express.Respons
   const sqlQuery = `
     SELECT COUNT(DISTINCT provider_uid) AS unique_provider_count
     FROM cusp_audit.demo.risk_providers a WHERE EXISTS (
-      SELECT 1 FROM cusp_audit.demo.provider_insights b WHERE b.provider_licensing_id = a.provider_licensing_id
+      SELECT 1 FROM cusp_audit.demo.provider_insights b WHERE b.provider_licensing_id = a.provider_licensing_id AND b.is_flagged = 'true'
     );
   `;
 
