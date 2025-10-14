@@ -30,10 +30,10 @@ router.route("/providerCount")
 router.route("/flaggedCount")
   .get(authenticateJWT, getFlaggedCount);
 
-router.route("/highRiskScore")
+router.route("/highRiskScore/:year")
   .get(authenticateJWT, getHighestRiskScore);
 
-router.route("/highRiskScoreCount")
+router.route("/highRiskScoreCount/:year")
   .get(authenticateJWT, getProvidersWithHighRiskCount);
 
 router.route("/annual/:year")
