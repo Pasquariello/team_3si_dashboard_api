@@ -253,8 +253,14 @@ export async function getProviderCount(req: express.Request, res: express.Respon
 // @access  Private
 export async function getHighestRiskScore(req: express.Request, res: express.Response) {
   console.log("HIT getHighestRiskScore");
-  const yearNum = 2024;
-  const sqlQuery = `
+  const yearNum = Number.parseInt(req.params.year, 10);
+  const prevYear = yearNum - 1
+
+  if (Number.isNaN(yearNum) || yearNum < 1980 || yearNum > 2100) {
+    return res.status(400).json({ error: "Invalid year parameter" });
+  }
+
+  const sqlQuery = (year: number) => `
     WITH combined AS (
       SELECT
         COALESCE(b.provider_licensing_id, p.provider_licensing_id, d.provider_licensing_id, s.provider_licensing_id) AS provider_licensing_id,
@@ -266,14 +272,14 @@ export async function getHighestRiskScore(req: express.Request, res: express.Res
         SELECT provider_licensing_id,
           SUM(CASE WHEN billed_over_capacity_flag THEN 1 ELSE 0 END) AS total_billed_over_capacity    
         FROM cusp_audit.demo.monthly_billed_over_capacity
-        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${year}
         GROUP BY provider_licensing_id
       ) b
       FULL OUTER JOIN (
         SELECT provider_licensing_id, 
           SUM(CASE WHEN placed_over_capacity_flag THEN 1 ELSE 0 END) AS total_placed_over_capacity    
         FROM cusp_audit.demo.monthly_placed_over_capacity
-        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${year}
         GROUP BY provider_licensing_id
       ) p
         ON b.provider_licensing_id = p.provider_licensing_id
@@ -281,7 +287,7 @@ export async function getHighestRiskScore(req: express.Request, res: express.Res
         SELECT provider_licensing_id, 
           SUM(CASE WHEN distance_traveled_flag THEN 1 ELSE 0 END) AS total_distance_traveled   
         FROM cusp_audit.demo.monthly_distance_traveled
-        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${year}
         GROUP BY provider_licensing_id
       ) d
         ON COALESCE(b.provider_licensing_id, p.provider_licensing_id) = d.provider_licensing_id
@@ -289,7 +295,7 @@ export async function getHighestRiskScore(req: express.Request, res: express.Res
         SELECT provider_licensing_id, 
           SUM(CASE WHEN same_address_flag THEN 1 ELSE 0 END) AS total_same_address      
         FROM cusp_audit.demo.monthly_providers_with_same_address
-        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
+        WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${year}
         GROUP BY provider_licensing_id
       ) s
         ON COALESCE(b.provider_licensing_id, p.provider_licensing_id, d.provider_licensing_id) = s.provider_licensing_id
@@ -307,13 +313,16 @@ export async function getHighestRiskScore(req: express.Request, res: express.Res
     FROM unpivoted
     ORDER BY total_value DESC
     LIMIT 1;
-
   `;
 
   try {
-    const data = await queryData(sqlQuery);
-    console.log("highRiskScore data ====", data);
-    res.json(data[0]);
+
+    const currentYear = await queryData(sqlQuery(yearNum));
+    const previousYear = await queryData(sqlQuery(prevYear))
+
+
+    // console.log("highRiskScore data ====", data);
+    res.json([{year: yearNum, ...currentYear[0]}, {year: prevYear, ...previousYear[0]}]);
   }
   catch (err: any) {
     console.log("err =======", err);
@@ -326,7 +335,11 @@ export async function getHighestRiskScore(req: express.Request, res: express.Res
 // @route   put /api/v1/providerData/overview
 // @access  Private
 export async function getProvidersWithHighRiskCount(req: express.Request, res: express.Response) {
-  const yearNum = 2024;
+  const yearNum = Number.parseInt(req.params.year, 10);
+  if (Number.isNaN(yearNum) || yearNum < 1980 || yearNum > 2100) {
+    return res.status(400).json({ error: "Invalid year parameter" });
+  }
+
   const sqlQuery = `
     WITH combined AS (
       SELECT
@@ -393,7 +406,9 @@ export async function getProvidersWithHighRiskCount(req: express.Request, res: e
 export async function getFlaggedCount(req: express.Request, res: express.Response) {
   const sqlQuery = `
     SELECT COUNT(DISTINCT provider_uid) AS unique_provider_count
-    FROM cusp_audit.demo.risk_providers ;
+    FROM cusp_audit.demo.risk_providers a WHERE EXISTS (
+      SELECT 1 FROM cusp_audit.demo.provider_insights b WHERE b.provider_licensing_id = a.provider_licensing_id
+    );
   `;
 
   try {
