@@ -21,16 +21,16 @@ router.get("/", async (req: express.Request, res: express.Response) => {
 router.route("/export/:year")
   .get(authenticateJWT, exportProviderData);
 
-router.route("/providerCount")
+router.route("/providerCount/:year")
   .get(authenticateJWT, getProviderCount);
 
-router.route("/flaggedCount")
+router.route("/flaggedCount/:year")
   .get(authenticateJWT, getFlaggedCount);
 
-router.route("/highRiskScore")
+router.route("/highRiskScore/:year")
   .get(authenticateJWT, getHighestRiskScore);
 
-router.route("/highRiskScoreCount")
+router.route("/highRiskScoreCount/:year")
   .get(authenticateJWT, getProvidersWithHighRiskCount);
 
 
