@@ -2,7 +2,7 @@ import type express from "express";
 
 import { Router } from "express";
 
-import { getProviderAnnualData, getProviderCities, getProviderMonthData, updateProviderDataInsights, getProviderCount, getFlaggedCount, getProvidersWithHighRiskCount, getHighestRiskScore, exportProviderData } from "../controllers/providerData.js";
+import { exportProviderDataMonthly, exportProviderDataYearly, getFlaggedCount, getHighestRiskScore, getProviderAnnualData, getProviderCities, getProviderCount, getProviderMonthData, getProvidersWithHighRiskCount, updateProviderDataInsights } from "../controllers/providerData.js";
 import { authenticateJWT } from "../middlewares.js";
 import { queryData } from "../services/queryService.js";
 
@@ -18,8 +18,11 @@ router.get("/", async (req: express.Request, res: express.Response) => {
   }
 });
 
-router.route("/export/:year")
-  .get(authenticateJWT, exportProviderData);
+router.route("/export/year/:year")
+  .get(authenticateJWT, exportProviderDataYearly);
+
+router.route("/export/month/:month")
+  .get(authenticateJWT, exportProviderDataMonthly);
 
 router.route("/providerCount/:year")
   .get(authenticateJWT, getProviderCount);
@@ -33,9 +36,8 @@ router.route("/highRiskScore/:year")
 router.route("/highRiskScoreCount/:year")
   .get(authenticateJWT, getProvidersWithHighRiskCount);
 
-
 router.route("/annual/:year")
-  .get(authenticateJWT,getProviderAnnualData);
+  .get(authenticateJWT, getProviderAnnualData);
 
 router.route("/insights/:row_id")
   .put(updateProviderDataInsights);
@@ -46,6 +48,6 @@ router.route("/month/:month")
     getProviderMonthData,
   );
 
-router.route("/cities").get(authenticateJWT, getProviderCities)
+router.route("/cities").get(authenticateJWT, getProviderCities);
 
 export default router;
