@@ -592,7 +592,7 @@ export async function getProviderAnnualData(req: express.Request, res: express.R
 
   try {
     const rawData = await queryData(text, namedParameters);
-    const result: UiAnnualProviderData[] = rawData.map((item) => {
+    const result: UiAnnualProviderData[] = rawData.map((item: any) => { // TODO TAYLOR / JUSTIN - fix typing any is temporary
       return {
         providerLicensingId: item?.provider_licensing_id,
         providerName: item?.provider_name ? item.provider_name : "--",
