@@ -2,6 +2,7 @@ import type express from "express";
 
 import SQL from "sql-template-strings";
 
+import { buildProviderDetailsQuery } from "../queryBuilders/providerDetails.js";
 import { buildProviderMonthlyQuery, checkedFilter } from "../queryBuilders/providerMonthly.js";
 import { buildProviderYearlyQuery } from "../queryBuilders/providerYearly.js";
 import { queryData } from "../services/queryService.js";
@@ -67,6 +68,30 @@ export type UiAnnualProviderData = {
   city: string;
   zip: string;
 };
+
+export type ProviderDetailsData = {
+  provider_licensing_id: string;
+  provider_name: string;
+  postal_address: string;
+  city: string;
+  zip: string;
+  provider_status: string;
+  provider_type: string;
+  provider_email: string;
+  provider_phone: string
+}
+
+export type UiProviderDetailsData = {
+  providerLicensingId: string;
+  providerName: string;
+  postalAddress: string;
+  city: string;
+  zip: string;
+  providerStatus: string;
+  providerType: string;
+  providerEmail: string;
+  providerPhone: string
+}
 
 export async function exportProviderDataMonthly(req: express.Request, res: express.Response) {
   const month = req.params.month;
@@ -706,6 +731,33 @@ export async function getProviderMonthData(req: express.Request, res: express.Re
         postalAddress: item.postal_address || "--",
         city: item.city || "--",
         zip: item.zip || "--",
+      };
+    });
+    res.json(result);
+  }
+  catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+export async function getProviderDetails(req: express.Request, res: express.Response) {
+  const provider_licensing_id = req.params.id;
+  const { text, namedParameters } = buildProviderDetailsQuery({ provider_licensing_id });
+
+  try {
+    const rawData: ProviderDetailsData[] = await queryData(text, namedParameters);
+    const result: UiProviderDetailsData[] = rawData.map((item) => {
+
+      return {
+        providerLicensingId: item.provider_licensing_id,
+        providerName: item.provider_name,
+        postalAddress: item.postal_address || "--",
+        city: item.city || "--",
+        zip: item.zip || "--",
+        providerPhone: item.provider_phone || "--",
+        providerEmail: item.provider_email || "--",
+        providerStatus: item.provider_status || "--",
+        providerType: item.provider_type || "--"
       };
     });
     res.json(result);
