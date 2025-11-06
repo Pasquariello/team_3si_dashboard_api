@@ -24,10 +24,10 @@ router.route("/export/year/:year")
 router.route("/export/month/:month")
   .get(authenticateJWT, exportProviderDataMonthly);
 
-router.route("/providerCount")
+router.route("/providerCount/:year")
   .get(authenticateJWT, getProviderCount);
 
-router.route("/flaggedCount")
+router.route("/flaggedCount/:year")
   .get(authenticateJWT, getFlaggedCount);
 
 router.route("/highRiskScore/:year")

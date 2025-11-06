@@ -148,7 +148,6 @@ export async function exportProviderDataMonthly(req: express.Request, res: expre
 // @access  Private
 export async function exportProviderDataYearly(req: express.Request, res: express.Response) {
   const yearNum = Number.parseInt(req.params.year, 10);
-  console.log("HERE", yearNum);
   if (Number.isNaN(yearNum) || yearNum < 1980 || yearNum > 2100) {
     return res.status(400).json({ error: "Invalid year parameter" });
   }
@@ -232,9 +231,12 @@ export async function exportProviderDataYearly(req: express.Request, res: expres
 // @route   put /api/v1/providerData/overview
 // @access  Private
 export async function getProviderCount(req: express.Request, res: express.Response) {
+  const yearNum = Number.parseInt(req.params.year, 10);
+
   const sqlQuery = `
-    SELECT COUNT(DISTINCT provider_uid) AS unique_provider_count
-    FROM cusp_audit.demo.risk_providers;
+    SELECT COUNT(DISTINCT provider_licensing_id) AS unique_provider_count
+    FROM cusp_audit.demo.risk_scores
+    WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
   `;
 
   try {
@@ -242,7 +244,6 @@ export async function getProviderCount(req: express.Request, res: express.Respon
     res.json(data[0]);
   }
   catch (err: any) {
-    // console.log("err =======", err);
     res.status(500).json({ error: err.message });
   }
 }
@@ -252,13 +253,62 @@ export async function getProviderCount(req: express.Request, res: express.Respon
 // @route   put /api/v1/providerData/overview
 // @access  Private
 export async function getHighestRiskScore(req: express.Request, res: express.Response) {
-  console.log("HIT getHighestRiskScore");
   const year1 = Number.parseInt(req.params.year, 10);
-  const year2 = year1 - 1
-
-  if (Number.isNaN(year1) || year1< 1980 || year1 > 2100) {
-    return res.status(400).json({ error: "Invalid year parameter" });
-  }
+  const year2 = year1 - 1;
+  // const sqlQuery = `
+  //   WITH combined AS (
+  //     SELECT
+  //       COALESCE(b.provider_licensing_id, p.provider_licensing_id, d.provider_licensing_id, s.provider_licensing_id) AS provider_licensing_id,
+  //       COALESCE(b.total_billed_over_capacity, 0) AS total_billed_over_capacity,
+  //       COALESCE(p.total_placed_over_capacity, 0) AS total_placed_over_capacity,
+  //       COALESCE(d.total_distance_traveled, 0) AS total_distance_traveled,
+  //       COALESCE(s.total_same_address, 0) AS total_same_address
+  //     FROM (
+  //       SELECT provider_licensing_id,
+  //         SUM(CASE WHEN billed_over_capacity_flag THEN 1 ELSE 0 END) AS total_billed_over_capacity    
+  //       FROM cusp_audit.demo.monthly_billed_over_capacity
+  //       WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
+  //       GROUP BY provider_licensing_id
+  //     ) b
+  //     FULL OUTER JOIN (
+  //       SELECT provider_licensing_id, 
+  //         SUM(CASE WHEN placed_over_capacity_flag THEN 1 ELSE 0 END) AS total_placed_over_capacity    
+  //       FROM cusp_audit.demo.monthly_placed_over_capacity
+  //       WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
+  //       GROUP BY provider_licensing_id
+  //     ) p
+  //       ON b.provider_licensing_id = p.provider_licensing_id
+  //     FULL OUTER JOIN (
+  //       SELECT provider_licensing_id, 
+  //         SUM(CASE WHEN distance_traveled_flag THEN 1 ELSE 0 END) AS total_distance_traveled   
+  //       FROM cusp_audit.demo.monthly_distance_traveled
+  //       WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
+  //       GROUP BY provider_licensing_id
+  //     ) d
+  //       ON COALESCE(b.provider_licensing_id, p.provider_licensing_id) = d.provider_licensing_id
+  //     FULL OUTER JOIN (
+  //       SELECT provider_licensing_id, 
+  //         SUM(CASE WHEN same_address_flag THEN 1 ELSE 0 END) AS total_same_address      
+  //       FROM cusp_audit.demo.monthly_providers_with_same_address
+  //       WHERE YEAR(CAST(StartOfMonth AS DATE)) = ${yearNum}
+  //       GROUP BY provider_licensing_id
+  //     ) s
+  //       ON COALESCE(b.provider_licensing_id, p.provider_licensing_id, d.provider_licensing_id) = s.provider_licensing_id
+  //   ),
+  //   unpivoted AS (
+  //     SELECT 'total_billed_over_capacity' AS metric, SUM(total_billed_over_capacity) AS total_value FROM combined
+  //     UNION ALL
+  //     SELECT 'total_placed_over_capacity', SUM(total_placed_over_capacity) FROM combined
+  //     UNION ALL
+  //     SELECT 'total_distance_traveled', SUM(total_distance_traveled) FROM combined
+  //     UNION ALL
+  //     SELECT 'total_same_address', SUM(total_same_address) FROM combined
+  //   )
+  //   SELECT metric, total_value
+  //   FROM unpivoted
+  //   ORDER BY total_value DESC
+  //   LIMIT 1;
+  // `;
 
 const sqlQuery = `
   WITH combined AS (
@@ -301,7 +351,9 @@ const sqlQuery = `
       GROUP BY provider_licensing_id
     ) s
       ON COALESCE(b.provider_licensing_id, p.provider_licensing_id, d.provider_licensing_id) = s.provider_licensing_id
+
     UNION ALL
+
     -- Year 2
     SELECT
       COALESCE(b.provider_licensing_id, p.provider_licensing_id, d.provider_licensing_id, s.provider_licensing_id) AS provider_licensing_id,
@@ -342,6 +394,7 @@ const sqlQuery = `
     ) s
       ON COALESCE(b.provider_licensing_id, p.provider_licensing_id, d.provider_licensing_id) = s.provider_licensing_id
   ),
+
   -- Aggregate each metric per year
   unpivoted AS (
     SELECT year, 'total_billed_over_capacity' AS metric, SUM(total_billed_over_capacity) AS total_value FROM combined GROUP BY year
@@ -352,6 +405,7 @@ const sqlQuery = `
     UNION ALL
     SELECT year, 'total_same_address', SUM(total_same_address) FROM combined GROUP BY year
   )
+
   -- Rank the metrics and return all top ties
   SELECT year, metric, total_value
   FROM (
@@ -365,6 +419,8 @@ const sqlQuery = `
   WHERE rnk = 1
   ORDER BY year, metric;
 `;
+
+
 
   try {
 
@@ -440,6 +496,7 @@ export async function getProvidersWithHighRiskCount(req: express.Request, res: e
 
   try {
     const data = await queryData(sqlQuery);
+    console.log("providers count with high riskscore DATA----", data)
     res.json(data[0]);
   }
   catch (err: any) {
@@ -452,11 +509,13 @@ export async function getProvidersWithHighRiskCount(req: express.Request, res: e
 // @route   put /api/v1/providerData/overview
 // @access  Private
 export async function getFlaggedCount(req: express.Request, res: express.Response) {
+  const yearNum = Number.parseInt(req.params.year, 10);
+
   const sqlQuery = `
-    SELECT COUNT(DISTINCT provider_uid) AS unique_provider_count
+    SELECT COUNT(DISTINCT provider_uid) AS flagged_provider_count
     FROM cusp_audit.demo.risk_providers a WHERE EXISTS (
       SELECT 1 FROM cusp_audit.demo.provider_insights b WHERE b.provider_licensing_id = a.provider_licensing_id AND b.is_flagged = 'true'
-    );
+    )
   `;
 
   try {
@@ -527,7 +586,6 @@ export async function getProviderAnnualData(req: express.Request, res: express.R
 
   const { text, namedParameters } = buildProviderYearlyQuery({ offset: String(offset), year: String(yearNum), isFlagged: flagged, cities });
 
-  console.log("HERE", yearNum);
   if (Number.isNaN(yearNum) || yearNum < 1980 || yearNum > 2100) {
     return res.status(400).json({ error: "Invalid year parameter" });
   }
@@ -551,7 +609,6 @@ export async function getProviderAnnualData(req: express.Request, res: express.R
       };
     });
 
-    console.log("REESULT", result);
     res.json(result);
   }
   catch (err: any) {

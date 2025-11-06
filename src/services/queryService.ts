@@ -12,18 +12,47 @@
 // }
 
 import type { ExecuteStatementOptions } from "@databricks/sql/dist/contracts/IDBSQLSession.js";
+import { getDatabricksClient } from "../config/databricks";
 
-import { connectToDatabricks } from "../config/databricks.js";
+// import { connectToDatabricks } from "../config/databricks.ts";
 
-export async function queryData(text: string, namedParameters?: ExecuteStatementOptions["namedParameters"]): Promise<any[]> {
-  const client = await connectToDatabricks();
+// export async function queryData(text: string, namedParameters?: ExecuteStatementOptions["namedParameters"]): Promise<any[]> {
+//   const client = await connectToDatabricks();
+  // const session = await client.openSession();
+  // const operation = await session.executeStatement(text, { namedParameters });
+  // const result = await operation.fetchAll();
+
+  // await operation.close();
+  // await session.close();
+  // await client.close();
+
+    // return result;
+
+
+// const session = await client.openSession();
+// try {
+//   const operation = await session.executeStatement(text, { namedParameters });
+//   const result = await operation.fetchAll();
+//   await operation.close();
+//   return result;
+// } finally {
+//   await session.close();
+//   await client.close();
+// }
+
+// }
+
+// NEW
+export async function queryData(sql: string, namedParameters?: { cities?: any; isFlagged?: any; month?: string; offset?: number; year?: string; iLikeCity?: string; } | undefined) {
+  const client = await getDatabricksClient();
   const session = await client.openSession();
-  const operation = await session.executeStatement(text, { namedParameters });
-  const result = await operation.fetchAll();
 
-  await operation.close();
-  await session.close();
-  await client.close();
-
-  return result;
+  try {
+    const operation = await session.executeStatement(sql, { namedParameters });
+    const result = await operation.fetchAll();
+    await operation.close();
+    return result;
+  } finally {
+    await session.close().catch(() => {});
+  }
 }
