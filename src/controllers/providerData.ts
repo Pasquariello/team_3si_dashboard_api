@@ -537,7 +537,7 @@ export async function getProvidersWithHighRiskCount(req: express.Request, res: e
 // @route   put /api/v1/providerData/overview
 // @access  Private
 export async function getFlaggedCount(req: express.Request, res: express.Response) {
-  const yearNum = Number.parseInt(req.params.year, 10);
+  // const yearNum = Number.parseInt(req.params.year, 10);
 
   const sqlQuery = `
     SELECT COUNT(DISTINCT provider_uid) AS flagged_provider_count
@@ -745,7 +745,7 @@ export async function getProviderDetails(req: express.Request, res: express.Resp
   const { text, namedParameters } = buildProviderDetailsQuery({ provider_licensing_id });
 
   try {
-    const rawData: ProviderDetailsData[] = await queryData(text, namedParameters);
+    const rawData = await queryData(text, namedParameters) as ProviderDetailsData[]
     const result: UiProviderDetailsData[] = rawData.map((item) => {
 
       return {
