@@ -43,10 +43,11 @@ export type AnnualProviderData = {
   provider_licensing_id: string;
   provider_name: string;
   StartOfMonth: string; // ISO DateString
-  billed_over_capacity_flag: boolean;
-  placed_over_capacity_flag: boolean;
-  same_address_flag: boolean;
-  distance_traveled_flag: boolean;
+  total_billed_over_capacity: number;
+  total_placed_over_capacity: number;
+  total_same_address: number;
+  total_distance_traveled: number;
+  overall_risk_score: number;
   is_flagged: boolean;
   comment: string;
   postal_address: string;
@@ -619,8 +620,8 @@ export async function getProviderAnnualData(req: express.Request, res: express.R
   }
 
   try {
-    const rawData = await queryData(text, namedParameters);
-    const result: UiAnnualProviderData[] = rawData.map((item: any) => { // TODO TAYLOR / JUSTIN - fix typing any is temporary
+    const rawData = await queryData(text, namedParameters) as AnnualProviderData[];
+    const result: UiAnnualProviderData[] = rawData.map((item) => {
       return {
         providerLicensingId: item?.provider_licensing_id,
         providerName: item?.provider_name ? item.provider_name : "--",
@@ -713,9 +714,8 @@ export async function getProviderMonthData(req: express.Request, res: express.Re
   const { text, namedParameters } = buildProviderMonthlyQuery({ offset: String(offset), month, isFlagged: flagged, cities });
 
   try {
-    // const rawData: MonthlyProviderData[] = await queryData(text, namedParameters);
-       const rawData = await queryData(text, namedParameters);
-    const result: UiMonthlyProviderData[] = rawData.map((item: any) => {
+    const rawData = await queryData(text, namedParameters) as MonthlyProviderData[];
+    const result: UiMonthlyProviderData[] = rawData.map((item) => {
       // TODO Taylor / Justin - update types
       return {
         providerLicensingId: item.provider_licensing_id,
