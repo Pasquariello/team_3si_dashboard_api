@@ -87,9 +87,11 @@ export async function exportProviderDataMonthly(req: express.Request, res: expre
   const { text, namedParameters } = buildProviderMonthlyQuery({ offset: String(offset), month, isFlagged: flagged, cities });
 
   try {
-    const rawData: MonthlyProviderData[] = await queryData(text, namedParameters);
-    const result = rawData.map((item) => {
+    // const rawData: MonthlyProviderData[] = await queryData(text, namedParameters);
+    const rawData = await queryData(text, namedParameters);
+    const result = rawData.map((item: any) => {
       return {
+        // TODO - fix data types
         provider_licensing_id: item.provider_licensing_id,
         provider_name: item.provider_name,
         total_billed_over_capacity: item.over_billed_capacity ? "Yes" : "--",
@@ -168,7 +170,8 @@ export async function exportProviderDataYearly(req: express.Request, res: expres
   
   try {
     const rawData = await queryData(text, namedParameters);
-    const result: Partial<AnnualProviderData>[] = rawData.map((item) => {
+    const result: Partial<AnnualProviderData>[] = rawData.map((item: any) => {
+      // TODO - fix data types
       return {
         provider_licensing_id: item.provider_licensing_id,
         provider_name: item.provider_name ? item.provider_name : "--",
@@ -633,9 +636,29 @@ export async function getProviderCities(req: express.Request, res: express.Respo
 
   sql.append(SQL` LIMIT 100`);
 
+// TODO - I think this can be simplified into this 
+// try {
+//   interface CityRecord {
+//     city: string;
+//     [key: string]: unknown;
+//   }
+
+//   const rawData = await queryData<CityRecord[]>(sql.text, namedParameters);
+
+//   const sortedCities = rawData
+//     .filter((item): item is CityRecord => typeof item.city === 'string')
+//     .sort((a, b) => a.city.localeCompare(b.city))
+//     .map(item => item.city);
+
+//   res.json(sortedCities);
+// } catch (err) {
+//   console.error(err);
+//   res.status(500).json({ error: 'Failed to fetch data' });
+// }
   try {
-    const rawData = await queryData(sql.text, namedParameters);
-    res.json(rawData.sort(({ city: cityA }, { city: cityB }) => cityA.localeCompare(cityB)).reduce((acc, curr) => {
+    // const rawData = await queryData(sql.text, namedParameters);
+    const rawData = (await queryData(sql.text, namedParameters)) as { city: string }[];
+    res.json(rawData.sort(({ city: cityA }, { city: cityB }) => cityA.localeCompare(cityB)).reduce<string[]>((acc, curr) => {
       acc.push(curr.city);
       return acc;
     }, []));
@@ -665,8 +688,10 @@ export async function getProviderMonthData(req: express.Request, res: express.Re
   const { text, namedParameters } = buildProviderMonthlyQuery({ offset: String(offset), month, isFlagged: flagged, cities });
 
   try {
-    const rawData: MonthlyProviderData[] = await queryData(text, namedParameters);
-    const result: UiMonthlyProviderData[] = rawData.map((item) => {
+    // const rawData: MonthlyProviderData[] = await queryData(text, namedParameters);
+       const rawData = await queryData(text, namedParameters);
+    const result: UiMonthlyProviderData[] = rawData.map((item: any) => {
+      // TODO Taylor / Justin - update types
       return {
         providerLicensingId: item.provider_licensing_id,
         startOfMonth: item.StartOfMonth,
