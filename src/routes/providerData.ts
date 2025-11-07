@@ -2,7 +2,7 @@ import type express from "express";
 
 import { Router } from "express";
 
-import { exportProviderDataMonthly, exportProviderDataYearly, getFlaggedCount, getHighestRiskScore, getProviderAnnualData, getProviderCities, getProviderCount, getProviderMonthData, getProvidersWithHighRiskCount, updateProviderDataInsights } from "../controllers/providerData.js";
+import { exportProviderDataMonthly, exportProviderDataYearly, getFlaggedCount, getHighestRiskScore, getProviderAnnualData, getProviderCities, getProviderCount, getProviderDetails, getProviderMonthData, getProvidersWithHighRiskCount, updateProviderDataInsights } from "../controllers/providerData.js";
 import { authenticateJWT } from "../middlewares.js";
 import { queryData } from "../services/queryService.js";
 
@@ -47,6 +47,12 @@ router.route("/month/:month")
     authenticateJWT,
     getProviderMonthData,
   );
+
+router.route("/:providerId")
+  .get(
+    authenticateJWT,
+    getProviderDetails
+  )
 
 router.route("/cities").get(authenticateJWT, getProviderCities);
 

@@ -760,7 +760,7 @@ export async function getProviderDetails(req: express.Request, res: express.Resp
         providerType: item.provider_type || "--"
       };
     });
-    res.json(result);
+    res.json(result[0]);
   }
   catch (err: any) {
     res.status(500).json({ error: err.message });
