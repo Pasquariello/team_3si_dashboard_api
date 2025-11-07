@@ -741,13 +741,12 @@ export async function getProviderMonthData(req: express.Request, res: express.Re
 }
 
 export async function getProviderDetails(req: express.Request, res: express.Response) {
-  const provider_licensing_id = req.params.id;
+  const provider_licensing_id = req.params.providerId;
   const { text, namedParameters } = buildProviderDetailsQuery({ provider_licensing_id });
 
   try {
     const rawData = await queryData(text, namedParameters) as ProviderDetailsData[]
     const result: UiProviderDetailsData[] = rawData.map((item) => {
-
       return {
         providerLicensingId: item.provider_licensing_id,
         providerName: item.provider_name,
