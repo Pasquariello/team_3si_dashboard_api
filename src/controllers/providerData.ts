@@ -2,6 +2,7 @@ import type express from "express";
 
 import SQL from "sql-template-strings";
 
+import { buildProviderDetailsQuery } from "../queryBuilders/providerDetails.js";
 import { buildProviderMonthlyQuery, checkedFilter } from "../queryBuilders/providerMonthly.js";
 import { buildProviderYearlyQuery } from "../queryBuilders/providerYearly.js";
 import { queryData } from "../services/queryService.js";
@@ -42,10 +43,11 @@ export type AnnualProviderData = {
   provider_licensing_id: string;
   provider_name: string;
   StartOfMonth: string; // ISO DateString
-  billed_over_capacity_flag: boolean;
-  placed_over_capacity_flag: boolean;
-  same_address_flag: boolean;
-  distance_traveled_flag: boolean;
+  total_billed_over_capacity: number;
+  total_placed_over_capacity: number;
+  total_same_address: number;
+  total_distance_traveled: number;
+  overall_risk_score: number;
   is_flagged: boolean;
   comment: string;
   postal_address: string;
@@ -67,6 +69,30 @@ export type UiAnnualProviderData = {
   city: string;
   zip: string;
 };
+
+export type ProviderDetailsData = {
+  provider_licensing_id: string;
+  provider_name: string;
+  postal_address: string;
+  city: string;
+  zip: string;
+  provider_status: string;
+  provider_type: string;
+  provider_email: string;
+  provider_phone: string
+}
+
+export type UiProviderDetailsData = {
+  providerLicensingId: string;
+  providerName: string;
+  postalAddress: string;
+  city: string;
+  zip: string;
+  providerStatus: string;
+  providerType: string;
+  providerEmail: string;
+  providerPhone: string
+}
 
 export async function exportProviderDataMonthly(req: express.Request, res: express.Response) {
   const month = req.params.month;
@@ -512,7 +538,7 @@ export async function getProvidersWithHighRiskCount(req: express.Request, res: e
 // @route   put /api/v1/providerData/overview
 // @access  Private
 export async function getFlaggedCount(req: express.Request, res: express.Response) {
-  const yearNum = Number.parseInt(req.params.year, 10);
+  // const yearNum = Number.parseInt(req.params.year, 10);
 
   const sqlQuery = `
     SELECT COUNT(DISTINCT provider_uid) AS flagged_provider_count
@@ -594,8 +620,8 @@ export async function getProviderAnnualData(req: express.Request, res: express.R
   }
 
   try {
-    const rawData = await queryData(text, namedParameters);
-    const result: UiAnnualProviderData[] = rawData.map((item: any) => { // TODO TAYLOR / JUSTIN - fix typing any is temporary
+    const rawData = await queryData(text, namedParameters) as AnnualProviderData[];
+    const result: UiAnnualProviderData[] = rawData.map((item) => {
       return {
         providerLicensingId: item?.provider_licensing_id,
         providerName: item?.provider_name ? item.provider_name : "--",
@@ -688,9 +714,8 @@ export async function getProviderMonthData(req: express.Request, res: express.Re
   const { text, namedParameters } = buildProviderMonthlyQuery({ offset: String(offset), month, isFlagged: flagged, cities });
 
   try {
-    // const rawData: MonthlyProviderData[] = await queryData(text, namedParameters);
-       const rawData = await queryData(text, namedParameters);
-    const result: UiMonthlyProviderData[] = rawData.map((item: any) => {
+    const rawData = await queryData(text, namedParameters) as MonthlyProviderData[];
+    const result: UiMonthlyProviderData[] = rawData.map((item) => {
       // TODO Taylor / Justin - update types
       return {
         providerLicensingId: item.provider_licensing_id,
@@ -709,6 +734,32 @@ export async function getProviderMonthData(req: express.Request, res: express.Re
       };
     });
     res.json(result);
+  }
+  catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+export async function getProviderDetails(req: express.Request, res: express.Response) {
+  const provider_licensing_id = req.params.providerId;
+  const { text, namedParameters } = buildProviderDetailsQuery({ provider_licensing_id });
+
+  try {
+    const rawData = await queryData(text, namedParameters) as ProviderDetailsData[]
+    const result: UiProviderDetailsData[] = rawData.map((item) => {
+      return {
+        providerLicensingId: item.provider_licensing_id,
+        providerName: item.provider_name,
+        postalAddress: item.postal_address || "--",
+        city: item.city || "--",
+        zip: item.zip || "--",
+        providerPhone: item.provider_phone || "--",
+        providerEmail: item.provider_email || "--",
+        providerStatus: item.provider_status || "--",
+        providerType: item.provider_type || "--"
+      };
+    });
+    res.json(result[0]);
   }
   catch (err: any) {
     res.status(500).json({ error: err.message });
