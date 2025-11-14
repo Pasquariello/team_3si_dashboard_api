@@ -2,7 +2,8 @@ import type express from "express";
 
 import { Router } from "express";
 
-import { exportProviderDataMonthly, exportProviderDataYearly, getFlaggedCount, getHighestRiskScore, getProviderAnnualData, getProviderCities, getProviderCount, getProviderDetails, getProviderMonthData, getProvidersWithHighRiskCount, updateProviderDataInsights } from "../controllers/providerData.js";
+import { exportProviderDataMonthly, exportProviderDataYearly, getFlaggedCount, getHighestRiskScore, getProviderAnnualData, getProviderCities, getProviderCount, getProviderDetails, getProviderMonthData, getProvidersWithHighRiskCount } from "../controllers/providerData.js";
+import { getProviderDataInsights, updateProviderDataInsights } from "../controllers/providerInsights.js";
 import { authenticateJWT } from "../middlewares.js";
 import { queryData } from "../services/queryService.js";
 
@@ -17,6 +18,8 @@ router.get("/", async (req: express.Request, res: express.Response) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+router.route("/cities").get(authenticateJWT, getProviderCities);
 
 router.route("/export/year/:year")
   .get(authenticateJWT, exportProviderDataYearly);
@@ -39,21 +42,21 @@ router.route("/highRiskScoreCount/:year")
 router.route("/annual/:year")
   .get(authenticateJWT, getProviderAnnualData);
 
-router.route("/insights/:row_id")
-  .put(updateProviderDataInsights);
+router.route("/insights/:providerId")
+  .put(authenticateJWT,updateProviderDataInsights)
+  .get(authenticateJWT, getProviderDataInsights);
 
 router.route("/month/:month")
   .get(
     authenticateJWT,
     getProviderMonthData,
   );
-
+// must be last!!
 router.route("/:providerId")
   .get(
     authenticateJWT,
-    getProviderDetails
-  )
+    getProviderDetails,
+  );
 
-router.route("/cities").get(authenticateJWT, getProviderCities);
 
 export default router;

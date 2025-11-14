@@ -557,47 +557,6 @@ export async function getFlaggedCount(req: express.Request, res: express.Respons
   }
 }
 
-// @desc    Update provider insight data - update comment or update flag status
-// @route   put /api/v1/providerData/insights/:id
-// @access  Private
-export async function updateProviderDataInsights(req: express.Request, res: express.Response) {
-  // const body = req.body;
-  const { provider_licensing_id, is_flagged, comment } = req?.body;
-
-  //  id INT,
-  //     row_id  STRING,
-  //     provider_licensing_id INT,
-  //     is_flagged BOOLEAN,
-  //     comment STRING,
-  //     created_at TIMESTAMP
-
-  const sqlQuery = `
-    MERGE INTO cusp_audit.demo.provider_insights target
-    USING (
-      SELECT '${provider_licensing_id}' AS provider_licensing_id,
-      '${is_flagged}' AS is_flagged,
-      '${comment}' AS comment
-    ) source
-    ON target.provider_licensing_id = source.provider_licensing_id
-    WHEN MATCHED THEN
-    UPDATE SET 
-        target.provider_licensing_id = source.provider_licensing_id,
-        target.is_flagged = source.is_flagged,
-        target.comment = source.comment
-    WHEN NOT MATCHED THEN
-    INSERT (provider_licensing_id, is_flagged, comment)
-    VALUES (source.provider_licensing_id, source.is_flagged, source.comment);`;
-
-  //   'select * from cusp_audit.demo limit 10'
-  try {
-    const data = await queryData(sqlQuery);
-    res.json(data);
-  }
-  catch (err: any) {
-    // console.log("err =======", err);
-    res.status(500).json({ error: err.message });
-  }
-}
 
 export async function getProviderAnnualData(req: express.Request, res: express.Response) {
   const yearNum = Number.parseInt(req.params.year, 10);
@@ -646,8 +605,9 @@ export async function getProviderAnnualData(req: express.Request, res: express.R
 }
 // TODO: add Index on city then add SORT BY then remove JS sort here
 export async function getProviderCities(req: express.Request, res: express.Response) {
+  const cityName = req.query?.cityName as string || "";
   const namedParameters = {
-    iLikeCity: `%${req.query.cityName || ""}%`,
+    iLikeCity: `%${cityName}%`,
   };
 
   const sql = SQL`SELECT DISTINCT city
@@ -655,8 +615,7 @@ export async function getProviderCities(req: express.Request, res: express.Respo
   cusp_audit.fake_data.addresses
   WHERE 1=1
   `;
-
-  if (req.query.cityName) {
+  if (cityName.length > 0) {
     sql.append(SQL` AND city ILIKE :iLikeCity`);
   }
 
@@ -684,6 +643,7 @@ export async function getProviderCities(req: express.Request, res: express.Respo
   try {
     // const rawData = await queryData(sql.text, namedParameters);
     const rawData = (await queryData(sql.text, namedParameters)) as { city: string }[];
+
     res.json(rawData.sort(({ city: cityA }, { city: cityB }) => cityA.localeCompare(cityB)).reduce<string[]>((acc, curr) => {
       acc.push(curr.city);
       return acc;
