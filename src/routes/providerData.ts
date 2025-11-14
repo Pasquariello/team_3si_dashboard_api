@@ -19,6 +19,8 @@ router.get("/", async (req: express.Request, res: express.Response) => {
   }
 });
 
+router.route("/cities").get(authenticateJWT, getProviderCities);
+
 router.route("/export/year/:year")
   .get(authenticateJWT, exportProviderDataYearly);
 
@@ -49,13 +51,12 @@ router.route("/month/:month")
     authenticateJWT,
     getProviderMonthData,
   );
-
+// must be last!!
 router.route("/:providerId")
   .get(
     authenticateJWT,
     getProviderDetails,
   );
 
-router.route("/cities/:cityName").get(authenticateJWT, getProviderCities);
 
 export default router;

@@ -605,8 +605,9 @@ export async function getProviderAnnualData(req: express.Request, res: express.R
 }
 // TODO: add Index on city then add SORT BY then remove JS sort here
 export async function getProviderCities(req: express.Request, res: express.Response) {
+  const cityName = req.query?.cityName as string || "";
   const namedParameters = {
-    iLikeCity: `%${req.params.cityName || ""}%`,
+    iLikeCity: `%${cityName}%`,
   };
 
   const sql = SQL`SELECT DISTINCT city
@@ -614,7 +615,7 @@ export async function getProviderCities(req: express.Request, res: express.Respo
   cusp_audit.fake_data.addresses
   WHERE 1=1
   `;
-  if (req.query.cityName) {
+  if (cityName.length > 0) {
     sql.append(SQL` AND city ILIKE :iLikeCity`);
   }
 
@@ -642,6 +643,7 @@ export async function getProviderCities(req: express.Request, res: express.Respo
   try {
     // const rawData = await queryData(sql.text, namedParameters);
     const rawData = (await queryData(sql.text, namedParameters)) as { city: string }[];
+
     res.json(rawData.sort(({ city: cityA }, { city: cityB }) => cityA.localeCompare(cityB)).reduce<string[]>((acc, curr) => {
       acc.push(curr.city);
       return acc;
