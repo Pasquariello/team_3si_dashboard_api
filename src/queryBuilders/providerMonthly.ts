@@ -83,7 +83,7 @@ export function buildProviderMonthlyQuery({ month, offset, isFlagged, cities }: 
   }
 
   // ---- append filter to the query above this line ----
-  query.append(SQL` ORDER BY total DESC`);
+  query.append(SQL` ORDER BY total DESC, dates.provider_licensing_id`);
   // offset is set to change by 200 each time from FE
   query.append(SQL` limit 200 offset :offset`);
 
