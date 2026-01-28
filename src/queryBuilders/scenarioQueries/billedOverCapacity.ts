@@ -20,7 +20,7 @@ export function buildBilledOverCapacityQuery({ provider_licensing_id }: BuildBil
       collect_list(
         named_struct(
           'billed_child_placements', b.billed_child_placements,
-          'placement_week', b.service_week,
+          'StartOfMonth', b.service_week,
           'full_time', b.full_time,
           'before_and_after_school', b.before_and_after_school,
           'part_time', b.part_time,
@@ -46,7 +46,9 @@ export function buildBilledOverCapacityQuery({ provider_licensing_id }: BuildBil
       m.before_and_after_school,
       m.part_time,
       m.variable_schedule,
-      m.full_time;
+      m.full_time
+    ORDER BY
+      m.StartOfMonth;
   `;
 
   const namedParameters = {

@@ -44,7 +44,9 @@ export function buildPlacedOverCapacityQuery({ provider_licensing_id }: BuildPla
       m.before_and_after_school,
       m.part_time,
       m.variable_schedule,
-      m.full_time;
+      m.full_time
+    ORDER BY
+      m.StartOfMonth;
   `;
 
   const namedParameters = {
