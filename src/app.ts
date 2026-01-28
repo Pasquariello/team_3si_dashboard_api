@@ -8,6 +8,7 @@ import type MessageResponse from "./interfaces/messageResponse.js";
 import * as middlewares from "./middlewares.js";
 import login from "./routes/login.js";
 import providerData from "./routes/providerData.js";
+import providerScenario from "./routes/providerScenario.js";
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.get<object, MessageResponse>("/", (req, res) => {
 
 app.use("/api/v1", login);
 app.use("/api/v1/providerData", providerData);
+app.use("/api/v1/scenario", providerScenario)
 
 app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);
