@@ -2,7 +2,7 @@ import type express from "express";
 
 import { Router } from "express";
 
-import { billedOverCapacityById, overallScoreById, placedOverCapacityById } from "../controllers/providerScenario.js";
+import { billedOverCapacityById, distanceTraveledById, overallScoreById, placedOverCapacityById, sameAddressById } from "../controllers/providerScenario.js";
 import { authenticateJWT } from "../middlewares.js";
 import { queryData } from "../services/queryService.js";
 
@@ -18,10 +18,14 @@ router.get("/", async (req: express.Request, res: express.Response) => {
   }
 });
 
+router.route("/overall/:providerId").get(authenticateJWT, overallScoreById);
+
 router.route("/placed/:providerId").get(authenticateJWT, placedOverCapacityById);
 
 router.route("/billed/:providerId").get(authenticateJWT, billedOverCapacityById);
 
-router.route("/overall/:providerId").get(authenticateJWT, overallScoreById);
+router.route("/address/:providerId").get(authenticateJWT, sameAddressById);
+
+router.route("/distance/:providerId").get(authenticateJWT,distanceTraveledById );
 
 export default router;
