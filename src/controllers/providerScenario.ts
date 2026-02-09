@@ -128,12 +128,12 @@ type UiDistanceTraveledScenarioMainRow = {
 
 type UiDistanceTraveledScenarioSubRow = Omit<UiDistanceTraveledScenarioMainRow, "subRows">;
 
-function reducePlacedOverWeeks(weeks: PlacedOverWeek[]): Pick<UiScenarioMainRows, "aveWklyPlacements" | "closeTime" | "openTime"> {
-  const averageWeeklyPlacements = (weeks.reduce((total, current) => (total += current.child_placements), 0)) / weeks.length;
+function reducePlacedOverWeeks(weeks?: PlacedOverWeek[]): Pick<UiScenarioMainRows, "aveWklyPlacements" | "closeTime" | "openTime"> {
+  const averageWeeklyPlacements = (weeks?.reduce((total, current) => (total += current.child_placements), 0)) || 0 / (weeks?.length || 0);
   return {
     aveWklyPlacements: averageWeeklyPlacements,
-    openTime: weeks[0].hours_open,
-    closeTime: weeks[0].hours_close,
+    openTime: (weeks?.[0]?.hours_open) || '--',
+    closeTime: (weeks?.[0]?.hours_close) || '--',
   };
 }
 
@@ -193,17 +193,17 @@ export async function placedOverCapacityById(req: express.Request, res: express.
   }
 }
 
-function reduceBilledOverWeeks(weeks: BilledOverWeek[]): Pick<UiScenarioMainRows, "aveWklyPlacements" | "closeTime" | "openTime"> {
-  const averageWeeklyPlacements = (weeks.reduce((total, current) => (total += current.billed_child_placements), 0)) / weeks.length;
+function reduceBilledOverWeeks(weeks?: BilledOverWeek[]): Pick<UiScenarioMainRows, "aveWklyPlacements" | "closeTime" | "openTime"> {
+  const averageWeeklyPlacements = ((weeks?.reduce((total, current) => (total += current.billed_child_placements), 0)) || 0) / (weeks?.length || 0);
   return {
     aveWklyPlacements: averageWeeklyPlacements,
-    openTime: weeks[0].hours_open,
-    closeTime: weeks[0].hours_close,
+    openTime: (weeks?.[0]?.hours_open) || '--',
+    closeTime: (weeks?.[0]?.hours_close) || '--',
   };
 }
 
 function parseBilledOverWeeks(weeks: BilledOverWeek[]): UiScenarioSubRows[] {
-  const parsed: UiScenarioSubRows[] = weeks.map((item) => {
+  const parsed: UiScenarioSubRows[] = weeks?.map((item) => {
     return {
       serviceMonth: item.StartOfMonth,
       riskFlag: item.risk_flag,
@@ -218,7 +218,7 @@ function parseBilledOverWeeks(weeks: BilledOverWeek[]): UiScenarioSubRows[] {
       openTime: item.hours_open,
       closeTime: item.hours_close,
     };
-  });
+  }) || [];
   return parsed;
 }
 
@@ -285,7 +285,7 @@ export async function overallScoreById(req: express.Request, res: express.Respon
 }
 
 function parseSameAddressWeeks(week: SameAddressScenarioWeek[]): UiSameAddressScenarioSubRow[] {
-  const result: UiSameAddressScenarioSubRow[] = week.map((item) => {
+  const result: UiSameAddressScenarioSubRow[] = week?.map((item) => {
     return {
       serviceMonth: item.StartOfMonth,
       riskFlag: item.same_address_flag,
@@ -295,7 +295,7 @@ function parseSameAddressWeeks(week: SameAddressScenarioWeek[]): UiSameAddressSc
       openDate: item.open_date || "--",
       closeDate: item.close_date || "--",
     };
-  });
+  }) || [];
   return result;
 }
 
@@ -329,14 +329,14 @@ export async function sameAddressById(req: express.Request, res: express.Respons
 }
 
 function parseDistanceWeeks(week: DistanceTraveledScenarioWeek[]): UiDistanceTraveledScenarioSubRow[] {
-  const result: UiDistanceTraveledScenarioSubRow[] = week.map((item) => {
+  const result: UiDistanceTraveledScenarioSubRow[] = week?.map((item) => {
     return {
       serviceMonth: item.StartOfMonth,
       riskFlag: item.distance_traveled_flag,
       distinctEnrolled: item.family_count,
       aveDistance: item.average_distance_miles,
     };
-  });
+  }) || [];
   return result;
 }
 
