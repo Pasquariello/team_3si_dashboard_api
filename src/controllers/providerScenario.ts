@@ -1,9 +1,11 @@
 import type express from "express";
 
 import { buildBilledOverCapacityQuery } from "../queryBuilders/scenarioQueries/billedOverCapacity.js";
-import { buildPlacedOverCapacityQuery } from "../queryBuilders/scenarioQueries/placedOverCapacity.js";
-import { queryData } from "../services/queryService.js";
+import { buildScenarioDistancTraveledQuery } from "../queryBuilders/scenarioQueries/distanceTraveled.js";
 import { buildOverallScoreQuery } from "../queryBuilders/scenarioQueries/overallScore.js";
+import { buildPlacedOverCapacityQuery } from "../queryBuilders/scenarioQueries/placedOverCapacity.js";
+import { buildScenarioSameAddressQuery } from "../queryBuilders/scenarioQueries/sameAddress.js";
+import { queryData } from "../services/queryService.js";
 
 type ScenarioPlacedOverData = {
   StartOfMonth: string; // ISO DateString
@@ -67,8 +69,8 @@ type OverallScoreData = {
   over_placement_capacity: 0 | 1;
   same_address_flag: 0 | 1;
   distance_traveled_flag: 0 | 1;
-  total: number // sum of other columns, true = 1, false = 0
-}
+  total: number; // sum of other columns, true = 1, false = 0
+};
 
 type UiOverallScoreData = {
   startOfMonth: string; // ISO Datestring
@@ -76,21 +78,67 @@ type UiOverallScoreData = {
   overPlacementCapacity: 0 | 1;
   sameAddress: 0 | 1;
   distanceTraveled: 0 | 1;
-  total: number // sum of other columns, true = 1, false = 0
-}
+  total: number; // sum of other columns, true = 1, false = 0
+};
 
+type SameAddressScenarioData = {
+  StartOfMonth: string; // ISO DateString
+  postal_address: string;
+  same_address_flag: boolean;
+  provider_licensing_id_match: string;
+  provider_name_match: string;
+  open_date: string;
+  close_date: string;
+  subRows: SameAddressScenarioWeek[];
+};
 
-function reducePlacedOverWeeks(weeks: PlacedOverWeek[]): Pick<UiScenarioMainRows, "aveWklyPlacements" | 'closeTime' | 'openTime'> {
-  const averageWeeklyPlacements = (weeks.reduce((total, current) => (total += current.child_placements), 0)) / weeks.length;
+type SameAddressScenarioWeek = Omit<SameAddressScenarioData, "subRows">;
+
+type UiSameAddressScenarioMainRow = {
+  serviceMonth: string;
+  postalAddress: string;
+  riskFlag: boolean;
+  providerId: string;
+  providerName: string;
+  openDate: string;
+  closeDate: string;
+  subRows: UiSameAddressScenarioSubRow[];
+
+};
+type UiSameAddressScenarioSubRow = Omit<UiSameAddressScenarioMainRow, "subRows">;
+
+type DistanceTraveledScenarioData = {
+  StartOfMonth: string; // ISO DateString
+  family_count: number;
+  average_distance_miles: number;
+  distance_traveled_flag: boolean;
+  subRows: DistanceTraveledScenarioWeek[];
+};
+
+type DistanceTraveledScenarioWeek = Omit<DistanceTraveledScenarioData, "subRows">;
+
+type UiDistanceTraveledScenarioMainRow = {
+  serviceMonth: string;
+  riskFlag: boolean;
+  distinctEnrolled: number;
+  aveDistance: number;
+  subRows: UiDistanceTraveledScenarioSubRow[];
+
+};
+
+type UiDistanceTraveledScenarioSubRow = Omit<UiDistanceTraveledScenarioMainRow, "subRows">;
+
+function reducePlacedOverWeeks(weeks?: PlacedOverWeek[]): Pick<UiScenarioMainRows, "aveWklyPlacements" | "closeTime" | "openTime"> {
+  const averageWeeklyPlacements = (weeks?.reduce((total, current) => (total += current.child_placements), 0)) || 0 / (weeks?.length || 0);
   return {
     aveWklyPlacements: averageWeeklyPlacements,
-    openTime: weeks[0].hours_open,
-    closeTime: weeks[0].hours_close,
+    openTime: (weeks?.[0]?.hours_open) || '--',
+    closeTime: (weeks?.[0]?.hours_close) || '--',
   };
 }
 
 function parsePlacedOverWeeks(weeks: PlacedOverWeek[]): UiScenarioSubRows[] {
-  const parsed: UiScenarioSubRows[] = weeks.map(item => {
+  const parsed: UiScenarioSubRows[] = weeks.map((item) => {
     return {
       serviceMonth: item.StartOfMonth,
       riskFlag: item.placed_over_capacity_flag,
@@ -104,9 +152,9 @@ function parsePlacedOverWeeks(weeks: PlacedOverWeek[]): UiScenarioSubRows[] {
       aveWklyPlacements: item.child_placements,
       openTime: item.hours_open,
       closeTime: item.hours_close,
-    }
-  })
-  return parsed
+    };
+  });
+  return parsed;
 }
 
 export async function placedOverCapacityById(req: express.Request, res: express.Response) {
@@ -145,17 +193,17 @@ export async function placedOverCapacityById(req: express.Request, res: express.
   }
 }
 
-function reduceBilledOverWeeks(weeks: BilledOverWeek[]): Pick<UiScenarioMainRows, "aveWklyPlacements" | 'closeTime' | 'openTime'> {
-  const averageWeeklyPlacements = (weeks.reduce((total, current) => (total += current.billed_child_placements), 0)) / weeks.length;
+function reduceBilledOverWeeks(weeks?: BilledOverWeek[]): Pick<UiScenarioMainRows, "aveWklyPlacements" | "closeTime" | "openTime"> {
+  const averageWeeklyPlacements = ((weeks?.reduce((total, current) => (total += current.billed_child_placements), 0)) || 0) / (weeks?.length || 0);
   return {
     aveWklyPlacements: averageWeeklyPlacements,
-    openTime: weeks[0].hours_open,
-    closeTime: weeks[0].hours_close,
+    openTime: (weeks?.[0]?.hours_open) || '--',
+    closeTime: (weeks?.[0]?.hours_close) || '--',
   };
 }
 
 function parseBilledOverWeeks(weeks: BilledOverWeek[]): UiScenarioSubRows[] {
-  const parsed: UiScenarioSubRows[] = weeks.map(item => {
+  const parsed: UiScenarioSubRows[] = weeks?.map((item) => {
     return {
       serviceMonth: item.StartOfMonth,
       riskFlag: item.risk_flag,
@@ -169,9 +217,9 @@ function parseBilledOverWeeks(weeks: BilledOverWeek[]): UiScenarioSubRows[] {
       aveWklyPlacements: item.billed_child_placements,
       openTime: item.hours_open,
       closeTime: item.hours_close,
-    }
-  })
-  return parsed
+    };
+  }) || [];
+  return parsed;
 }
 
 export async function billedOverCapacityById(req: express.Request, res: express.Response) {
@@ -224,8 +272,93 @@ export async function overallScoreById(req: express.Request, res: express.Respon
         overBilledCapacity: item.over_billed_capacity ? 1 : 0, // this comes as a boolean convert here
         overPlacementCapacity: item.over_placement_capacity || 0,
         distanceTraveled: item.distance_traveled_flag || 0,
-        total: item.total
-};
+        total: item.total,
+      };
+    });
+
+    res.json(result);
+  }
+  catch (err: any) {
+    // console.log("err =======", err);
+    res.status(500).json({ error: err.message });
+  }
+}
+
+function parseSameAddressWeeks(week: SameAddressScenarioWeek[]): UiSameAddressScenarioSubRow[] {
+  const result: UiSameAddressScenarioSubRow[] = week?.map((item) => {
+    return {
+      serviceMonth: item.StartOfMonth,
+      riskFlag: item.same_address_flag,
+      postalAddress: item.postal_address,
+      providerId: item.provider_licensing_id_match,
+      providerName: item.provider_name_match,
+      openDate: item.open_date || "--",
+      closeDate: item.close_date || "--",
+    };
+  }) || [];
+  return result;
+}
+
+export async function sameAddressById(req: express.Request, res: express.Response) {
+  const provider_licensing_id = String(req.params.providerId);
+  const { text, namedParameters } = buildScenarioSameAddressQuery({ provider_licensing_id });
+
+  try {
+    const rawData = await queryData(text, namedParameters) as SameAddressScenarioData[];
+    const result: UiSameAddressScenarioMainRow[] = rawData.map((item) => {
+      // handle convert from domain model to ui model
+      const subRows = parseSameAddressWeeks(item.subRows);
+      return {
+        serviceMonth: item.StartOfMonth,
+        riskFlag: item.same_address_flag,
+        postalAddress: item.postal_address,
+        providerId: item.provider_licensing_id_match,
+        providerName: item.provider_name_match,
+        openDate: item.open_date || "--",
+        closeDate: item.close_date || "--",
+        subRows,
+      };
+    });
+
+    res.json(result);
+  }
+  catch (err: any) {
+    // console.log("err =======", err);
+    res.status(500).json({ error: err.message });
+  }
+}
+
+function parseDistanceWeeks(week: DistanceTraveledScenarioWeek[]): UiDistanceTraveledScenarioSubRow[] {
+  const result: UiDistanceTraveledScenarioSubRow[] = week?.map((item) => {
+    return {
+      serviceMonth: item.StartOfMonth,
+      riskFlag: item.distance_traveled_flag,
+      distinctEnrolled: item.family_count,
+      aveDistance: item.average_distance_miles,
+    };
+  }) || [];
+  return result;
+}
+
+export async function distanceTraveledById(req: express.Request, res: express.Response) {
+  const provider_licensing_id = String(req.params.providerId);
+  const { text, namedParameters } = buildScenarioDistancTraveledQuery({ provider_licensing_id });
+
+  try {
+    const rawData = await queryData(text, namedParameters) as DistanceTraveledScenarioData[];
+    // we should parse, top level needs open/close times
+
+    const result: UiDistanceTraveledScenarioMainRow[] = rawData.map((item) => {
+      // handle convert from domain model to ui model
+      const subRows = parseDistanceWeeks(item.subRows);
+      return {
+        serviceMonth: item.StartOfMonth,
+        riskFlag: item.distance_traveled_flag,
+        distinctEnrolled: item.family_count,
+        aveDistance: item.average_distance_miles,
+
+        subRows,
+      };
     });
 
     res.json(result);
