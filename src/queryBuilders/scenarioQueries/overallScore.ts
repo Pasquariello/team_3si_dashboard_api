@@ -33,7 +33,7 @@
       JOIN cusp_audit.demo.risk_providers rp ON rp.provider_licensing_id = dates.provider_licensing_id
       LEFT JOIN cusp_audit.demo.provider_insights pi ON rp.provider_licensing_id = pi.provider_licensing_id
       LEFT JOIN cusp_audit.fake_data.addresses a ON rp.provider_address_uid = a.provider_address_uid
-      ORDER BY startOfMonth;
+      ORDER BY to_timestamp(startOfMonth) DESC
     `;
   
     const namedParameters = {

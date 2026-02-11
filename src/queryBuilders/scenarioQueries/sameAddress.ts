@@ -56,7 +56,7 @@ export function buildScenarioSameAddressQuery({ provider_licensing_id }: BuildSc
       p.postal_address,
       p.open_date,
       p.close_date
-    ORDER BY m.StartOfMonth, p.postal_address
+    ORDER BY to_timestamp(m.StartOfMonth) DESC, p.postal_address
   ) t WHERE rn = 1
   `
 
