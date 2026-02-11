@@ -45,8 +45,7 @@ export function buildPlacedOverCapacityQuery({ provider_licensing_id }: BuildPla
       m.part_time,
       m.variable_schedule,
       m.full_time
-    ORDER BY
-      m.StartOfMonth;
+    ORDER BY to_timestamp(m.StartOfMonth) DESC;
   `;
 
   const namedParameters = {

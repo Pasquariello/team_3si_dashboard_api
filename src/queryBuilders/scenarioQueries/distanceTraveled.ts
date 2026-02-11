@@ -30,8 +30,7 @@ export function buildScenarioDistancTraveledQuery({ provider_licensing_id }: Bui
       m.family_count,
       m.average_distance_miles,
       m.distance_traveled_flag
-    ORDER BY
-      m.StartOfMonth
+    ORDER BY to_timestamp(m.StartOfMonth) DESC;
   `;
 
   // '0414fd5112995709909a1a414948c912'
