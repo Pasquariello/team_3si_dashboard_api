@@ -129,7 +129,7 @@ type UiDistanceTraveledScenarioMainRow = {
 type UiDistanceTraveledScenarioSubRow = Omit<UiDistanceTraveledScenarioMainRow, "subRows">;
 
 function reducePlacedOverWeeks(weeks?: PlacedOverWeek[]): Pick<UiScenarioMainRows, "aveWklyPlacements" | "closeTime" | "openTime"> {
-  const averageWeeklyPlacements = (weeks?.reduce((total, current) => (total += current.child_placements), 0)) || 0 / (weeks?.length || 0);
+  const averageWeeklyPlacements = ((weeks?.reduce((total, current) => (total += current.child_placements), 0)) || 0) / (weeks?.length || 0);
   return {
     aveWklyPlacements: averageWeeklyPlacements,
     openTime: (weeks?.[0]?.hours_open) || '--',
@@ -328,6 +328,16 @@ export async function sameAddressById(req: express.Request, res: express.Respons
   }
 }
 
+function reduceDistanceWeeks(weeks:DistanceTraveledScenarioWeek[]) {
+  const monthlyTotal = weeks.reduce((total, week)=> {
+    return total +=week.average_distance_miles
+  }, 0)
+
+  return {
+    aveDistance: monthlyTotal / weeks.length
+  }
+}
+
 function parseDistanceWeeks(week: DistanceTraveledScenarioWeek[]): UiDistanceTraveledScenarioSubRow[] {
   const result: UiDistanceTraveledScenarioSubRow[] = week?.map((item) => {
     return {
@@ -349,13 +359,14 @@ export async function distanceTraveledById(req: express.Request, res: express.Re
     // we should parse, top level needs open/close times
 
     const result: UiDistanceTraveledScenarioMainRow[] = rawData.map((item) => {
+      const monthlyAverage = reduceDistanceWeeks(item.subRows)
       // handle convert from domain model to ui model
       const subRows = parseDistanceWeeks(item.subRows);
       return {
         serviceMonth: item.StartOfMonth,
         riskFlag: item.distance_traveled_flag,
         distinctEnrolled: item.family_count,
-        aveDistance: item.average_distance_miles,
+        aveDistance: monthlyAverage.aveDistance,
 
         subRows,
       };
