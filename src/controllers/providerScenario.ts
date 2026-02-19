@@ -7,7 +7,7 @@ import { buildPlacedOverCapacityQuery } from "../queryBuilders/scenarioQueries/p
 import { buildScenarioSameAddressQuery } from "../queryBuilders/scenarioQueries/sameAddress.js";
 import { queryData } from "../services/queryService.js";
 
-type ScenarioPlacedOverData = {
+export type ScenarioPlacedOverData = {
   StartOfMonth: string; // ISO DateString
   provider_capacity: number;
   perc_deviation: number;
@@ -19,13 +19,13 @@ type ScenarioPlacedOverData = {
   subRows: PlacedOverWeek[];
 };
 
-type PlacedOverWeek = {
+export type PlacedOverWeek = {
   hours_open: string;
   hours_close: string;
   child_placements: number;
 } & Omit<ScenarioPlacedOverData, "subRows">;
 
-type UiScenarioMainRows = {
+export type UiScenarioMainRows = {
   serviceMonth: string; // ISO DateString
   riskFlag: boolean;
   providerCapacity: number;
@@ -41,9 +41,9 @@ type UiScenarioMainRows = {
   subRows: UiScenarioSubRows[];
 };
 
-type UiScenarioSubRows = Omit<UiScenarioMainRows, "subRows">;
+export type UiScenarioSubRows = Omit<UiScenarioMainRows, "subRows">;
 
-type ScenarioBilledOverData = {
+export type ScenarioBilledOverData = {
   StartOfMonth: string; // ISO DateString
   provider_capacity: number;
   billed_child_placements: number;
@@ -57,7 +57,7 @@ type ScenarioBilledOverData = {
   subRows: BilledOverWeek[];
 };
 
-type BilledOverWeek = {
+export type BilledOverWeek = {
   hours_open: string;
   hours_close: string;
   billed_child_placements: number;
@@ -81,7 +81,7 @@ type UiOverallScoreData = {
   total: number; // sum of other columns, true = 1, false = 0
 };
 
-type SameAddressScenarioData = {
+export type SameAddressScenarioData = {
   StartOfMonth: string; // ISO DateString
   postal_address: string;
   same_address_flag: boolean;
@@ -92,9 +92,9 @@ type SameAddressScenarioData = {
   subRows: SameAddressScenarioWeek[];
 };
 
-type SameAddressScenarioWeek = Omit<SameAddressScenarioData, "subRows">;
+export type SameAddressScenarioWeek = Omit<SameAddressScenarioData, "subRows">;
 
-type UiSameAddressScenarioMainRow = {
+export type UiSameAddressScenarioMainRow = {
   serviceMonth: string;
   postalAddress: string;
   riskFlag: boolean;
@@ -105,9 +105,9 @@ type UiSameAddressScenarioMainRow = {
   subRows: UiSameAddressScenarioSubRow[];
 
 };
-type UiSameAddressScenarioSubRow = Omit<UiSameAddressScenarioMainRow, "subRows">;
+export type UiSameAddressScenarioSubRow = Omit<UiSameAddressScenarioMainRow, "subRows">;
 
-type DistanceTraveledScenarioData = {
+export type DistanceTraveledScenarioData = {
   StartOfMonth: string; // ISO DateString
   family_count: number;
   average_distance_miles: number;
@@ -115,9 +115,9 @@ type DistanceTraveledScenarioData = {
   subRows: DistanceTraveledScenarioWeek[];
 };
 
-type DistanceTraveledScenarioWeek = Omit<DistanceTraveledScenarioData, "subRows">;
+export type DistanceTraveledScenarioWeek = Omit<DistanceTraveledScenarioData, "subRows">;
 
-type UiDistanceTraveledScenarioMainRow = {
+export type UiDistanceTraveledScenarioMainRow = {
   serviceMonth: string;
   riskFlag: boolean;
   distinctEnrolled: number;
@@ -126,9 +126,9 @@ type UiDistanceTraveledScenarioMainRow = {
 
 };
 
-type UiDistanceTraveledScenarioSubRow = Omit<UiDistanceTraveledScenarioMainRow, "subRows">;
+export type UiDistanceTraveledScenarioSubRow = Omit<UiDistanceTraveledScenarioMainRow, "subRows">;
 
-function reducePlacedOverWeeks(weeks?: PlacedOverWeek[]): Pick<UiScenarioMainRows, "aveWklyPlacements" | "closeTime" | "openTime"> {
+export function reducePlacedOverWeeks(weeks?: PlacedOverWeek[]): Pick<UiScenarioMainRows, "aveWklyPlacements" | "closeTime" | "openTime"> {
   const averageWeeklyPlacements = (weeks?.reduce((total, current) => (total += current.child_placements), 0)) || 0 / (weeks?.length || 0);
   return {
     aveWklyPlacements: averageWeeklyPlacements,
@@ -137,7 +137,7 @@ function reducePlacedOverWeeks(weeks?: PlacedOverWeek[]): Pick<UiScenarioMainRow
   };
 }
 
-function parsePlacedOverWeeks(weeks: PlacedOverWeek[]): UiScenarioSubRows[] {
+export function parsePlacedOverWeeks(weeks: PlacedOverWeek[]): UiScenarioSubRows[] {
   const parsed: UiScenarioSubRows[] = weeks.map((item) => {
     return {
       serviceMonth: item.StartOfMonth,
@@ -148,7 +148,7 @@ function parsePlacedOverWeeks(weeks: PlacedOverWeek[]): UiScenarioSubRows[] {
       beforeAfterSchool: item.before_and_after_school,
       partTime: item.part_time,
       variableSchedule: item.variable_schedule,
-      fullTime: item.variable_schedule,
+      fullTime: item.full_time,
       aveWklyPlacements: item.child_placements,
       openTime: item.hours_open,
       closeTime: item.hours_close,
@@ -193,7 +193,7 @@ export async function placedOverCapacityById(req: express.Request, res: express.
   }
 }
 
-function reduceBilledOverWeeks(weeks?: BilledOverWeek[]): Pick<UiScenarioMainRows, "aveWklyPlacements" | "closeTime" | "openTime"> {
+export function reduceBilledOverWeeks(weeks?: BilledOverWeek[]): Pick<UiScenarioMainRows, "aveWklyPlacements" | "closeTime" | "openTime"> {
   const averageWeeklyPlacements = ((weeks?.reduce((total, current) => (total += current.billed_child_placements), 0)) || 0) / (weeks?.length || 0);
   return {
     aveWklyPlacements: averageWeeklyPlacements,
@@ -202,7 +202,7 @@ function reduceBilledOverWeeks(weeks?: BilledOverWeek[]): Pick<UiScenarioMainRow
   };
 }
 
-function parseBilledOverWeeks(weeks: BilledOverWeek[]): UiScenarioSubRows[] {
+export function parseBilledOverWeeks(weeks: BilledOverWeek[]): UiScenarioSubRows[] {
   const parsed: UiScenarioSubRows[] = weeks?.map((item) => {
     return {
       serviceMonth: item.StartOfMonth,
@@ -213,7 +213,7 @@ function parseBilledOverWeeks(weeks: BilledOverWeek[]): UiScenarioSubRows[] {
       beforeAfterSchool: item.before_and_after_school,
       partTime: item.part_time,
       variableSchedule: item.variable_schedule,
-      fullTime: item.variable_schedule,
+      fullTime: item.full_time,
       aveWklyPlacements: item.billed_child_placements,
       openTime: item.hours_open,
       closeTime: item.hours_close,
@@ -284,7 +284,7 @@ export async function overallScoreById(req: express.Request, res: express.Respon
   }
 }
 
-function parseSameAddressWeeks(week: SameAddressScenarioWeek[]): UiSameAddressScenarioSubRow[] {
+export function parseSameAddressWeeks(week: SameAddressScenarioWeek[]): UiSameAddressScenarioSubRow[] {
   const result: UiSameAddressScenarioSubRow[] = week?.map((item) => {
     return {
       serviceMonth: item.StartOfMonth,
@@ -328,7 +328,17 @@ export async function sameAddressById(req: express.Request, res: express.Respons
   }
 }
 
-function parseDistanceWeeks(week: DistanceTraveledScenarioWeek[]): UiDistanceTraveledScenarioSubRow[] {
+function reduceDistanceWeeks(weeks:DistanceTraveledScenarioWeek[]) {
+  const monthlyTotal = weeks.reduce((total, week)=> {
+    return total +=week.average_distance_miles
+  }, 0)
+
+  return {
+    aveDistance: monthlyTotal / weeks.length
+  }
+}
+
+export function parseDistanceWeeks(week: DistanceTraveledScenarioWeek[]): UiDistanceTraveledScenarioSubRow[] {
   const result: UiDistanceTraveledScenarioSubRow[] = week?.map((item) => {
     return {
       serviceMonth: item.StartOfMonth,
@@ -349,13 +359,14 @@ export async function distanceTraveledById(req: express.Request, res: express.Re
     // we should parse, top level needs open/close times
 
     const result: UiDistanceTraveledScenarioMainRow[] = rawData.map((item) => {
+      const monthlyAverage = reduceDistanceWeeks(item.subRows)
       // handle convert from domain model to ui model
       const subRows = parseDistanceWeeks(item.subRows);
       return {
         serviceMonth: item.StartOfMonth,
         riskFlag: item.distance_traveled_flag,
         distinctEnrolled: item.family_count,
-        aveDistance: item.average_distance_miles,
+        aveDistance: monthlyAverage.aveDistance,
 
         subRows,
       };
