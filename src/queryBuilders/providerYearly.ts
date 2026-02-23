@@ -2,7 +2,7 @@ import { SQL } from "sql-template-strings";
 
 import { parseOffsetParam } from "./providerMonthly.js";
 
-type BuildProviderYearlyQueryParams = {
+export type BuildProviderYearlyQueryParams = {
   isFlagged: boolean | null;
   year: string;
   offset: string;

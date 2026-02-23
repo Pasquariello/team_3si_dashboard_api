@@ -80,3 +80,7 @@ typings/
 .serverless
 
 dist
+# Agentic Workflow
+.claude/
+*.backup
+.vscode/*

@@ -1,3 +1,5 @@
+import type { SQLStatement } from "sql-template-strings";
+
 import SQL from "sql-template-strings";
 
 type BuildScenarioSameAddressQuery = {
@@ -5,12 +7,10 @@ type BuildScenarioSameAddressQuery = {
 };
 // Note some items in sub row rename properties to the "_match" variant, this is to align the view in the UI
 export function buildScenarioSameAddressQuery({ provider_licensing_id }: BuildScenarioSameAddressQuery) {
-  const plid = String(provider_licensing_id)
+  const plid = String(provider_licensing_id);
   // '991002938c70bb63c79d37ab971c73c6'
 
-  const query = SQL`
-  SELECT * 
-  FROM (
+  const query: SQLStatement = SQL`SELECT * FROM (
     SELECT 
       m.StartOfMonth,
       m.same_address_flag,
@@ -58,7 +58,7 @@ export function buildScenarioSameAddressQuery({ provider_licensing_id }: BuildSc
       p.close_date
     ORDER BY to_timestamp(m.StartOfMonth) DESC, p.postal_address
   ) t WHERE rn = 1
-  `
+  `;
 
   const namedParameters = {
     plid,
@@ -66,10 +66,3 @@ export function buildScenarioSameAddressQuery({ provider_licensing_id }: BuildSc
 
   return { text: query.text, namedParameters };
 }
-
-
-
-
-
-
-

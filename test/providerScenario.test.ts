@@ -1,7 +1,7 @@
 import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
 
-import type { BilledOverWeek, DistanceTraveledScenarioWeek, PlacedOverWeek, SameAddressScenarioWeek, ScenarioBilledOverData, ScenarioPlacedOverData, UiDistanceTraveledScenarioSubRow, UiSameAddressScenarioSubRow, UiScenarioSubRows } from "../src/controllers/providerScenario.js";
+import type { BilledOverWeek, DistanceTraveledScenarioWeek, PlacedOverWeek, SameAddressScenarioWeek, ScenarioBilledOverData, UiDistanceTraveledScenarioSubRow, UiSameAddressScenarioSubRow, UiScenarioSubRows } from "../src/controllers/providerScenario.js";
 
 import app from "../src/app.js";
 import { parseBilledOverWeeks, parseDistanceWeeks, parsePlacedOverWeeks, parseSameAddressWeeks, reduceBilledOverWeeks, reducePlacedOverWeeks } from "../src/controllers/providerScenario.js";

@@ -5,7 +5,7 @@ import app from "./app.js";
 import { env } from "./env.js";
 
 const port = env.PORT || 3000;
-const server = http.createServer(app).listen(port, () => {
+export const server = http.createServer(app).listen(port, () => {
   console.log("Listening (HTTP): ", port);
 });
 
