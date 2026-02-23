@@ -31,6 +31,7 @@
 // }
 // start new
 import { DBSQLClient } from "@databricks/sql";
+
 import { env } from "../env.js";
 
 let client: DBSQLClient | null = null;
@@ -46,4 +47,8 @@ export async function getDatabricksClient(): Promise<DBSQLClient> {
     console.log("Databricks client connected");
   }
   return client;
+}
+
+export function resetClient() {
+  client = null
 }

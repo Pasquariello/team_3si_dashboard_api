@@ -6,9 +6,8 @@ type BuildPlacedOverCapacityQueryParams = {
 
 export function buildPlacedOverCapacityQuery({ provider_licensing_id }: BuildPlacedOverCapacityQueryParams) {
   const plid = String(provider_licensing_id)
-  const query= SQL`
-    SELECT
-      m.StartOfMonth,
+  const query= SQL`SELECT
+    m.StartOfMonth,
       m.provider_capacity,
       m.perc_deviation,
       m.placed_over_capacity_flag,

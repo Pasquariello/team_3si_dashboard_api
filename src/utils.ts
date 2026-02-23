@@ -1,0 +1,1 @@
+export const normalizeSQL = (sql: string) => sql.replace(/\s+/g, ' ').trim();
